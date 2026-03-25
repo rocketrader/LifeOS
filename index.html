@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   LifeOS - Personal Task Manager
-  Version: v4.7 (bug-fix release)
+  Version: v5.0 (cloud sync)
 
   ARCHITECTURE:
   - Single HTML file, all CSS and JS inline
@@ -45,7 +45,9 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Life OS v4.7</title>
+<title>Life OS v5.0</title>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{color-scheme:only light}
@@ -195,7 +197,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ita:focus{border-color:#1d4ed8}
 .ipl{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:#888882;margin-bottom:8px}
 .itk{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#EFEDE9;border-radius:8px;border:1px solid #e0ddd8;margin-bottom:6px}
-.itkb{flex:1;min-width:0}
+.itkb{flex:1;min-width:0}.itkb{flex:1;min-width:0}
 .itkt{font-size:14px;color:#1a1a18;margin-bottom:4px}
 .itkm{font-size:12px;color:#888882;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ierr{font-size:12px;color:#c0392b;padding:8px 12px;background:#fdf0ee;border-radius:8px;margin-bottom:8px}
@@ -339,12 +341,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .fwd-x.h{background:#b45309}
 .fwd-x.m{background:#1d4ed8}
 .fwd-x.l{background:#15803d}
+/* PIN screen */
+#pin-scr{position:fixed;inset:0;background:#F7F5F2;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.pin-box{background:#ffffff;border:1px solid #e0ddd8;border-radius:16px;padding:32px 28px;max-width:320px;width:100%;text-align:center}
+.pin-logo{font-family:Georgia,serif;font-style:italic;font-size:28px;color:#1a1a18;margin-bottom:4px}
+.pin-sub{font-size:13px;color:#888882;margin-bottom:24px;line-height:1.6}
+.pin-inp{width:100%;padding:14px;border:1.5px solid #ccc9c3;border-radius:10px;font-size:24px;text-align:center;letter-spacing:12px;font-family:-apple-system,monospace;background:#F7F5F2;color:#1a1a18;outline:none;-webkit-appearance:none}
+.pin-inp:focus{border-color:#1d4ed8}
+.pin-btn{width:100%;padding:14px;border-radius:10px;background:#1a1a18;color:#ffffff;font-size:15px;font-weight:500;border:none;cursor:pointer;font-family:inherit;margin-top:14px;min-height:48px}
+.pin-btn:active{opacity:.8}
+.pin-err{font-size:13px;color:#c0392b;margin-top:12px;display:none}
+.pin-skip{font-size:13px;color:#888882;margin-top:16px;cursor:pointer;border:none;background:none;font-family:inherit;text-decoration:underline;padding:8px;min-height:44px}
+/* Sync indicator */
+.sync-ind{display:flex;align-items:center;gap:6px;padding:8px 14px;font-size:11px;color:#888882}
+.sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sync-ok{background:#15803d}.sync-ing{background:#b45309;animation:pulse 1.5s infinite}
+.sync-off{background:#888882}.sync-err{background:#c0392b}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 </style>
 </head>
 <body>
+<div id="pin-scr">
+  <div class="pin-box">
+    <div class="pin-logo">Life OS</div>
+    <div class="pin-sub" id="pin-sub">Enter your PIN to sync across devices</div>
+    <input class="pin-inp" id="pin-inp" type="tel" maxlength="6" placeholder="- - - -" inputmode="numeric" autocomplete="off">
+    <button class="pin-btn" id="pin-btn" onclick="submitPin()">Unlock</button>
+    <div class="pin-err" id="pin-err"></div>
+    <button class="pin-skip" onclick="skipPin()">Use offline only</button>
+  </div>
+</div>
 <div id="topbar">
   <button class="tb-ham" onclick="toggleSb()"><span></span><span></span><span></span></button>
-  <span class="tb-logo">Life OS <span class="tb-ver">v4.7</span></span>
+  <span class="tb-logo">Life OS <span class="tb-ver">v5.0</span></span>
+  <div id="sync-ind-mob" class="sync-ind" style="display:none"></div>
   <button class="tb-imp" onclick="nav('import')">&#8595; Import</button>
 </div>
 <div id="err-box" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#c0392b;color:#fff;padding:12px 16px;font-size:13px;font-family:monospace;line-height:1.5;word-break:break-all"></div>
@@ -352,7 +382,127 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="app"><aside id="sb"></aside><main id="mn"></main></div>
 <script>
 var cdInterval=null;
-var V="v4.7";
+var V="v5.0";
+/* ── Cloud Sync (Firebase) ── */
+var FBCFG={
+  apiKey:"AIzaSyCuhIldfs8yjJKhzoV_ENff5pTXoegXh2I",
+  authDomain:"lifeos-sync-337ef.firebaseapp.com",
+  databaseURL:"https://lifeos-sync-337ef-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"lifeos-sync-337ef",
+  storageBucket:"lifeos-sync-337ef.firebasestorage.app",
+  messagingSenderId:"87995540510",
+  appId:"1:87995540510:web:e38d9aa35f8d5a59b07a0f"
+};
+var fbReady=false;
+var fbRef=null;
+var syncTimer=null;
+var lastLocalSave=0;var appStarted=false;
+function initFB(){
+  if(!FBCFG.apiKey||!FBCFG.databaseURL)return false;
+  try{firebase.initializeApp(FBCFG);fbReady=true;return true;}catch(ex){return false;}
+}
+function showPinErr(msg){
+  var el=document.getElementById("pin-err");
+  if(el){el.textContent=msg;el.style.display="block";}
+}
+function hidePin(){
+  var el=document.getElementById("pin-scr");
+  if(el)el.style.display="none";
+}
+function submitPin(){
+  var inp=document.getElementById("pin-inp");
+  if(!inp)return;
+  var pin=inp.value.trim();
+  if(pin.length<4){showPinErr("Please enter at least 4 digits");return;}
+  doPin(pin);
+}
+window.submitPin=submitPin;
+function skipPin(){
+  hidePin();
+  startApp();
+}
+window.skipPin=skipPin;
+function doPin(pin){
+  localStorage.setItem("los_pin",pin);
+  fbRef=firebase.database().ref("users/"+pin);
+  setSyncStatus("syncing");
+  var btnEl=document.getElementById("pin-btn");
+  if(btnEl){btnEl.textContent="Connecting...";btnEl.disabled=true;}
+  fbRef.once("value",function(snap){
+    var data=snap.val();
+    if(data){
+      if(data.tasks)localStorage.setItem("los_tasks",JSON.stringify(data.tasks));
+      if(data.rem)localStorage.setItem("los_rem",JSON.stringify(data.rem));
+      if(data.ep)localStorage.setItem("los_ep",JSON.stringify(data.ep));
+      if(data.rt)localStorage.setItem("los_rt",JSON.stringify(data.rt));
+      if(data.cd)localStorage.setItem("los_cd",JSON.stringify(data.cd));
+    }
+    setSyncStatus("ok");
+    hidePin();
+    startApp();
+    if(!data)saveToCloud();
+    listenForChanges();
+  },function(err){
+    setSyncStatus("error");
+    hidePin();
+    startApp();
+  });
+}
+function startApp(){
+  if(appStarted)return;
+  appStarted=true;
+  init();
+  schedMidnight();
+}
+function saveToCloud(){
+  if(!fbRef)return;
+  setSyncStatus("syncing");
+  lastLocalSave=Date.now();
+  var data={
+    tasks:ST.tasks,
+    rem:ST.rem,
+    ep:ST.ep,
+    rt:ST.rt,
+    cd:loadCd(),
+    updatedAt:lastLocalSave
+  };
+  fbRef.set(data,function(err){
+    setSyncStatus(err?"error":"ok");
+  });
+}
+function queueSync(){
+  if(!fbRef)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(saveToCloud,2000);
+}
+function listenForChanges(){
+  if(!fbRef)return;
+  var firstFire=true;
+  fbRef.on("value",function(snap){
+    if(firstFire){firstFire=false;return;}
+    var data=snap.val();
+    if(!data||!data.updatedAt)return;
+    if(data.updatedAt<=lastLocalSave)return;
+    if(data.tasks){ST.tasks=data.tasks;localStorage.setItem("los_tasks",JSON.stringify(data.tasks));}
+    if(data.rem){ST.rem=data.rem;localStorage.setItem("los_rem",JSON.stringify(data.rem));}
+    if(data.ep){ST.ep=data.ep;localStorage.setItem("los_ep",JSON.stringify(data.ep));}
+    if(data.rt){ST.rt=data.rt;localStorage.setItem("los_rt",JSON.stringify(data.rt));}
+    if(data.cd)localStorage.setItem("los_cd",JSON.stringify(data.cd));
+    rSb();rMn();
+    setSyncStatus("ok");
+  });
+}
+function setSyncStatus(s){
+  var dot="sync-off";var txt="Offline";
+  if(s==="ok"){dot="sync-ok";txt="Synced";}
+  else if(s==="syncing"){dot="sync-ing";txt="Syncing...";}
+  else if(s==="error"){dot="sync-err";txt="Sync error";}
+  var h='<span class="sync-dot '+dot+'"></span>'+txt;
+  var el1=document.getElementById("sync-ind-sb");
+  var el2=document.getElementById("sync-ind-mob");
+  if(el1)el1.innerHTML=h;
+  if(el2){el2.innerHTML=h;el2.style.display="flex";}
+}
 var PROJ=["GSK","General To Do","Portfolio","Credit Health","Flat Buying","Healing & Wellbeing"];
 var PO={Urgent:0,High:1,Medium:2,Low:3};
 var PC={Urgent:"u",High:"h",Medium:"m",Low:"l"};
@@ -425,7 +575,7 @@ var DE=[
 ];
 var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,cdAdding:false,cdEditing:null};
 function gl(k){try{return JSON.parse(localStorage.getItem("los_"+k));}catch(ex){return null;}}
-function sl(k,v){try{localStorage.setItem("los_"+k,JSON.stringify(v));}catch(ex){}}
+function sl(k,v){try{localStorage.setItem("los_"+k,JSON.stringify(v));}catch(ex){}queueSync();}
 function ts(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function ds(s){if(!s)return"none";var t=ts();var sd=new Date();sd.setDate(sd.getDate()+7);var sw=sd.getFullYear()+"-"+String(sd.getMonth()+1).padStart(2,"0")+"-"+String(sd.getDate()).padStart(2,"0");if(s<t)return"ov";if(s===t)return"td";if(s<=sw)return"sn";return"ft";}
 function fd(s){if(!s)return"";var p=s.split("-");var st=ds(s);var l=parseInt(p[2])+" "+MN[parseInt(p[1])-1];if(st==="ov")return"Overdue "+l;if(st==="td")return"Today";if(st==="sn")return l+" "+p[0];return l+" "+p[0];}
@@ -445,8 +595,7 @@ function sRule(id,v){var r=ST.rem.find(function(x){return x.id===id;});if(!r)ret
 function dRule(id){ST.rem=ST.rem.filter(function(x){return x.id!==id;});sl("rem",ST.rem);rSb();rMn();}
 function aRule(){ST.rem.push({id:"r"+Date.now(),title:"",active:true});sl("rem",ST.rem);rMn();setTimeout(function(){var els=document.querySelectorAll(".rlt");if(els.length)els[els.length-1].focus();},50);}
 function aRt(slot){var t=prompt("New routine item:");if(!t||!t.trim())return;var c=ST.rt.custom||[];c.push({id:"rc"+Date.now(),cat:"Custom",title:t.trim(),time:slot==="am"?"am":slot==="eve"?"eve":"anytime",days:"daily"});ST.rt.custom=c;sl("rt",ST.rt);rMn();}
-function dRt(id){ST.rt.custom=(ST.rt.custom||[]).filter(function(x){return x.id!==id;});delete ST.rt.checks[id+"_am"];delete ST.rt.checks[id+"_eve"];delete ST.rt.checks[id+"_any"];sl("rt",ST.rt);rMn();}
-function tTld(){ST.tld=!ST.tld;rMn();}
+function dRt(id){ST.rt.custom=(ST.rt.custom||[]).filter(function(x){return x.id!==id;});delete ST.rt.checks[id+"_am"];delete ST.rt.checks[id+"_eve"];delete ST.rt.checks[id+"_any"];sl("rt",ST.rt);rMn();}function tTld(){ST.tld=!ST.tld;rMn();}
 function sTlr(m){ST.tlm=m;rMn();}
 window.nav=nav;window.navP=navP;window.tick=tick;window.xpnd=xpnd;window.tEp=tEp;window.tRt=tRt;
 window.oAdd=oAdd;window.cAdd=cAdd;window.sRule=sRule;window.dRule=dRule;window.aRule=aRule;
@@ -645,8 +794,7 @@ function vRoutine(){
   }
   function ab(slot){
     return '<button class="rtab" onclick="aRt(\''+slot+'\')"><span style="font-size:16px">+</span> Add item</button>';
-  }
-  var amPct=am.length?Math.round(ad/am.length*100):0;
+  }  var amPct=am.length?Math.round(ad/am.length*100):0;
   var evPct=ev.length?Math.round(ed/ev.length*100):0;
   var h='<div class="mnp"><div class="pgt">Daily routine</div><div class="pgs">'+sub+'</div>'+
     '<div class="pw"><div class="pb" style="width:'+pct+'%"></div></div>'+
@@ -679,6 +827,7 @@ function loadCd(){
 }
 function saveCd(events){
   try{localStorage.setItem("los_cd",JSON.stringify(events));}catch(ex){}
+  queueSync();
 }
 function calcCountdown(target){
   var now=new Date();var t=new Date(target);var diff=t-now;
@@ -774,6 +923,7 @@ function tickCountdowns(){
   });
 }
 var CHANGELOG=[
+  {v:"v5.0",date:"Mar 2026",changes:["Cloud sync via Firebase - data saved online and accessible from any device","PIN-based login - set a 4-6 digit PIN to protect your data","Offline support - app works without internet and syncs when back online","Real-time sync - changes on one device appear on others automatically","Sync status indicator in sidebar and mobile topbar"],fixes:[]},
   {v:"v4.7",date:"Mar 2026",changes:["Restored 8 missing functions that were lost in v4.5-4.6 rebuilds","All tabs now working again"],fixes:["cdInterval undeclared - caused ReferenceError on every nav click","vImport function missing - Import tab crashed","loadCd/saveCd/calcCountdown/cdUnit missing - Countdown tab crashed","addCdEvent/editCdEvent/deleteCdEvent missing","Forward view inline onscroll replaced with addEventListener for iOS Safari"]},
   {v:"v4.6",date:"Mar 2026",changes:["Forward view fixed - removed window.innerHeight SecurityError"],fixes:["window.innerHeight blocked in iframe","replaced inline onscroll with named function","height via CSS not JS"]},
   {v:"v4.5",date:"Mar 2026",changes:["Forward view tab - tasks fixed left, 90 days scrolling right, X on due date"],fixes:[]},
@@ -843,8 +993,7 @@ function deleteSnap(id){
 window.deleteSnap=deleteSnap;
 function manualSave(){
   var label=prompt("Name this snapshot (optional):","");
-  if(label===null)return;
-  saveSnap(label||undefined);
+  if(label===null)return;  saveSnap(label||undefined);
   rMn();
 }
 window.manualSave=manualSave;
@@ -1019,12 +1168,26 @@ function rSb(){
   sb.innerHTML='<div class="logo">Life OS <span class="logo-ver">'+V+'</span></div>'+
     '<div class="sb-sec"><div class="sb-lbl">Views</div>'+vhtml+'</div>'+
     '<div class="sb-sec"><div class="sb-lbl">Projects</div>'+phtml+'</div>'+
-    '<div class="sb-foot"><button class="add-btn" onclick="oAdd()">+ New task</button></div>';
+    '<div class="sb-foot">'+(fbRef?'<div id="sync-ind-sb" class="sync-ind"></div>':'')+
+    '<button class="add-btn" onclick="oAdd()">+ New task</button></div>';
 }
 function init(){var tasks=gl("tasks");var rem=gl("rem");var ep=gl("ep");var rt=gl("rt");ST.tasks=tasks||DT.map(function(t){var o={};for(var k in t)o[k]=t[k];return o;});ST.rem=rem||DR.map(function(r){var o={};for(var k in r)o[k]=r[k];return o;});var td=ts();if(!ep||ep.lr!==td)ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};else ST.ep=ep;if(!rt||rt.lr!==td)ST.rt={checks:{},custom:(rt&&rt.custom)||[],lr:td};else ST.rt=rt;if(!tasks)sl("tasks",ST.tasks);if(!rem)sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);autoSnap();rSb();rMn();}
 function schedMidnight(){var now=new Date();var mid=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);setTimeout(function(){var td=ts();ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};ST.rt={checks:{},custom:ST.rt.custom||[],lr:td};sl("ep",ST.ep);sl("rt",ST.rt);rSb();rMn();schedMidnight();},mid-now);}
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(ST.add)cAdd();else closeSb();}});
-init();schedMidnight();
+/* PIN input: submit on Enter key */
+var pinInp=document.getElementById("pin-inp");
+if(pinInp)pinInp.addEventListener("keydown",function(ev){if(ev.key==="Enter")submitPin();});
+/* ── Startup ── */
+var fbOk=initFB();
+if(fbOk){
+  var savedPin=localStorage.getItem("los_pin");
+  if(savedPin){doPin(savedPin);}
+  /* else PIN screen is visible, waiting for user input */
+}else{
+  /* Firebase not configured - run offline */
+  hidePin();
+  startApp();
+}
 </script>
 </body>
 </html>
