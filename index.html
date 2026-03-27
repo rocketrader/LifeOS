@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   LifeOS - Personal Task Manager
-  Version: v5.2 (cloud sync)
+  Version: v5.3 (cloud sync)
 
   ARCHITECTURE:
   - Single HTML file, all CSS and JS inline
@@ -45,7 +45,7 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Life OS v5.2</title>
+<title>Life OS v5.3</title>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
@@ -406,7 +406,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </div>
 <div id="topbar">
   <button class="tb-ham" onclick="toggleSb()"><span></span><span></span><span></span></button>
-  <span class="tb-logo">Life OS <span class="tb-ver">v5.2</span></span>
+  <span class="tb-logo">Life OS <span class="tb-ver">v5.3</span></span>
   <div id="sync-ind-mob" class="sync-ind" style="display:none"></div>
   <button class="tb-imp" onclick="nav('import')">&#8595; Import</button>
 </div>
@@ -415,7 +415,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="app"><aside id="sb"></aside><main id="mn"></main></div>
 <script>
 var cdInterval=null;
-var V="v5.2";
+var V="v5.3";
 /* ── Cloud Sync (Firebase) ── */
 var FBCFG={
   apiKey:"AIzaSyCuhIldfs8yjJKhzoV_ENff5pTXoegXh2I",
@@ -608,7 +608,7 @@ var DE=[
   {id:"ep7",title:"Set alarm"},
   {id:"ep8",title:"Lock up / security check"},
 ];
-var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null,inpTab:"task",inpOk:""};
+var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,iRt:[],iEp:[],iCd:[],cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null,inpTab:"task",inpOk:""};
 function gl(k){try{return JSON.parse(localStorage.getItem("los_"+k));}catch(ex){return null;}}
 function sl(k,v){try{localStorage.setItem("los_"+k,JSON.stringify(v));}catch(ex){}queueSync();}
 function ts(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -662,29 +662,51 @@ window.exportData=exportData;window.downloadData=downloadData;window.importBacku
 function pDate(s){if(!s)return null;s=s.trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;var mo={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,january:1,february:2,march:3,april:4,june:6,july:7,august:8,september:9,october:10,november:11,december:12};var m1=s.match(/(\d{1,2})\s+([a-z]+)\s+(\d{4})/i);if(m1){var m=mo[m1[2].toLowerCase()];if(m)return m1[3]+"-"+String(m).padStart(2,"0")+"-"+String(m1[1]).padStart(2,"0");}var m2=s.match(/([a-z]+)\s+(\d{4})/i);if(m2){var mx=mo[m2[1].toLowerCase()];if(mx)return m2[2]+"-"+String(mx).padStart(2,"0")+"-01";}return null;}
 function pPri(s){if(!s)return"Medium";var u=s.trim().toLowerCase();if(u[0]==="u")return"Urgent";if(u[0]==="h")return"High";if(u[0]==="m")return"Medium";if(u[0]==="l")return"Low";return"Medium";}
 function fzP(s){if(!s)return null;var u=s.trim().toLowerCase();return PROJ.find(function(p){return p.toLowerCase()===u;})||PROJ.find(function(p){return p.toLowerCase().includes(u);})||PROJ.find(function(p){return u.includes(p.toLowerCase().split(" ")[0]);})||null;}
-function pInp(){var ta=document.getElementById("imp-ta");if(!ta)return;var raw=ta.value.trim();if(!raw){ST.ip=[];ST.ir=[];rIPrev();return;}
-var lines=raw.split("\n").map(function(l){return l.trim();}).filter(Boolean);var tasks=[];var errs=[];var rules=[];
-var rs=lines.findIndex(function(l){return /^LIFEOS-RULES/i.test(l);});var ts2=lines.findIndex(function(l){return /^LIFEOS(?!-RULES)/i.test(l);});
-var tLines=(ts2>=0?lines.slice(ts2+1,rs>ts2&&rs>=0?rs:undefined):(rs<0?lines:[])).filter(function(l){return l.startsWith("-");});
-tLines.forEach(function(line,i){var c=line.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});if(!pts[0])return;var proj=pts[1]?fzP(pts[1]):null;tasks.push({title:pts[0],project:proj,priority:pPri(pts[2]),dueDate:pDate(pts[3]),notes:pts[4]||"",ok:!!proj,_i:i,_p:proj||PROJ[0]});if(!proj&&pts[1])errs.push(pts[1]+" not recognised - please select below");});
-if(rs>=0){lines.slice(rs+1).filter(function(l){return l.startsWith("-");}).forEach(function(l){var t=l.replace(/^-\s*/,"").trim();if(t)rules.push(t);});}
-ST.ip=tasks;ST.ir=rules;ST.ie=errs;rIPrev();}
+function pInp(){var ta=document.getElementById("imp-ta");if(!ta)return;var raw=ta.value.trim();if(!raw){ST.ip=[];ST.ir=[];ST.iRt=[];ST.iEp=[];ST.iCd=[];rIPrev();return;}
+var lines=raw.split("\n").map(function(l){return l.trim();}).filter(Boolean);var tasks=[];var errs=[];var rules=[];var routines=[];var epItems=[];var countdowns=[];
+var headers=[];
+lines.forEach(function(l,i){
+  if(/^LIFEOS-RULES/i.test(l))headers.push({type:"rules",idx:i});
+  else if(/^LIFEOS-ROUTINE/i.test(l))headers.push({type:"routine",idx:i});
+  else if(/^LIFEOS-EVENINGPREP/i.test(l))headers.push({type:"ep",idx:i});
+  else if(/^LIFEOS-COUNTDOWN/i.test(l))headers.push({type:"cd",idx:i});
+  else if(/^LIFEOS/i.test(l))headers.push({type:"tasks",idx:i});
+});
+function linesForH(hi){var s=headers[hi].idx+1;var en=(hi+1<headers.length)?headers[hi+1].idx:lines.length;return lines.slice(s,en).filter(function(l){return l.startsWith("-");});}
+headers.forEach(function(hdr,hi){
+  var hLines=linesForH(hi);
+  if(hdr.type==="tasks"){
+    hLines.forEach(function(line,i){var c=line.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});if(!pts[0])return;var proj=pts[1]?fzP(pts[1]):null;tasks.push({title:pts[0],project:proj,priority:pPri(pts[2]),dueDate:pDate(pts[3]),notes:pts[4]||"",ok:!!proj,_i:i,_p:proj||PROJ[0]});if(!proj&&pts[1])errs.push(pts[1]+" not recognised - please select below");});
+  } else if(hdr.type==="rules"){
+    hLines.forEach(function(l){var t=l.replace(/^-\s*/,"").trim();if(t)rules.push(t);});
+  } else if(hdr.type==="routine"){
+    hLines.forEach(function(l){var c=l.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});if(!pts[0])return;var slot=pts[1]?pts[1].toLowerCase():"am";if(slot==="morning")slot="am";if(slot==="evening")slot="eve";if(["am","eve","both","anytime"].indexOf(slot)<0)slot="am";routines.push({title:pts[0],time:slot});});
+  } else if(hdr.type==="ep"){
+    hLines.forEach(function(l){var t=l.replace(/^-\s*/,"").trim();if(t)epItems.push(t);});
+  } else if(hdr.type==="cd"){
+    hLines.forEach(function(l){var c=l.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});if(!pts[0])return;countdowns.push({name:pts[0],target:pts[1]||""});});
+  }
+});
+ST.ip=tasks;ST.ir=rules;ST.iRt=routines;ST.iEp=epItems;ST.iCd=countdowns;ST.ie=errs;rIPrev();}
 window.pInp=pInp;
 function uIP(i,v){var t=ST.ip.find(function(x){return x._i===i;});if(t){t._p=v;}rIPrev();}window.uIP=uIP;
 function rIT(i){ST.ip=ST.ip.filter(function(x){return x._i!==i;});rIPrev();}window.rIT=rIT;
 function cImport(){var n=0;
 if(ST.ip&&ST.ip.length){var nt=ST.ip.map(function(t){return{id:"i"+Date.now()+Math.random().toString(36).slice(2),project:t._p,title:t.title,priority:t.priority,dueDate:t.dueDate,notes:t.notes,completed:false};});ST.tasks.push.apply(ST.tasks,nt);sl("tasks",ST.tasks);n+=nt.length;}
 if(ST.ir&&ST.ir.length){var nr=ST.ir.map(function(t){return{id:"r"+Date.now()+Math.random().toString(36).slice(2),title:t,active:true};});ST.rem.push.apply(ST.rem,nr);sl("rem",ST.rem);n+=nr.length;}
-ST.ip=[];ST.ir=[];ST.is=n;autoSnap();rSb();rMn();}
+if(ST.iRt&&ST.iRt.length){var c=ST.rt.custom||[];ST.iRt.forEach(function(r){c.push({id:"rc"+Date.now()+Math.random().toString(36).slice(2),cat:"Custom",title:r.title,time:r.time,days:"daily"});});ST.rt.custom=c;sl("rt",ST.rt);n+=ST.iRt.length;}
+if(ST.iEp&&ST.iEp.length){ST.iEp.forEach(function(t){ST.ep.items.push({id:"ep"+Date.now()+Math.random().toString(36).slice(2),title:t,completed:false});});sl("ep",ST.ep);n+=ST.iEp.length;}
+if(ST.iCd&&ST.iCd.length){var events=loadCd();ST.iCd.forEach(function(c){events.push({id:"cd"+Date.now()+Math.random().toString(36).slice(2),name:c.name,target:c.target});});saveCd(events);n+=ST.iCd.length;}
+ST.ip=[];ST.ir=[];ST.iRt=[];ST.iEp=[];ST.iCd=[];ST.is=n;autoSnap();rSb();rMn();}
 window.cImport=cImport;
 function rIPrev(){
   var prev=document.getElementById("iprev");if(!prev)return;
-  var tasks=ST.ip||[];var rules=ST.ir||[];
-  if(!tasks.length&&!rules.length){
+  var tasks=ST.ip||[];var rules=ST.ir||[];var rts=ST.iRt||[];var eps=ST.iEp||[];var cds=ST.iCd||[];
+  if(!tasks.length&&!rules.length&&!rts.length&&!eps.length&&!cds.length){
     prev.innerHTML=(ST.ie||[]).map(function(x){return '<div class="ierr">'+e(x)+'</div>';}).join('');
     return;
   }
-  var total=tasks.length+rules.length;
+  var total=tasks.length+rules.length+rts.length+eps.length+cds.length;
   var h='<div class="ipl">'+total+' item'+(total!==1?'s':'')+" ready to import</div>";
   (ST.ie||[]).forEach(function(x){h+='<div class="ierr">'+e(x)+'</div>';});
   tasks.forEach(function(t){
@@ -715,8 +737,39 @@ function rIPrev(){
       '</div>';
     });
   }
+  if(rts.length){
+    h+='<div class="ipl" style="margin-top:12px">Routine items ('+rts.length+')</div>';
+    rts.forEach(function(r,i){
+      var slotLabel=r.time==="am"?"Morning":r.time==="eve"?"Evening":r.time==="both"?"AM & PM":"Anytime";
+      h+='<div class="itk" style="align-items:center">'+
+        '<div style="width:24px;height:24px;border-radius:50%;background:#1d4ed8;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600">R</div>'+
+        '<div class="itkb"><div class="itkt">'+e(r.title)+'</div><div style="font-size:12px;color:#888882">'+slotLabel+'</div></div>'+
+        '<button onclick="ST.iRt.splice('+i+',1);rIPrev()" style="font-size:20px;color:#888882;cursor:pointer;padding:0 4px;border:none;background:none;flex-shrink:0;min-width:32px">&#215;</button>'+
+      '</div>';
+    });
+  }
+  if(eps.length){
+    h+='<div class="ipl" style="margin-top:12px">Evening prep items ('+eps.length+')</div>';
+    eps.forEach(function(r,i){
+      h+='<div class="itk" style="align-items:center">'+
+        '<div style="width:24px;height:24px;border-radius:50%;background:#7c3aed;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600">E</div>'+
+        '<div class="itkb"><div class="itkt">'+e(r)+'</div></div>'+
+        '<button onclick="ST.iEp.splice('+i+',1);rIPrev()" style="font-size:20px;color:#888882;cursor:pointer;padding:0 4px;border:none;background:none;flex-shrink:0;min-width:32px">&#215;</button>'+
+      '</div>';
+    });
+  }
+  if(cds.length){
+    h+='<div class="ipl" style="margin-top:12px">Countdowns ('+cds.length+')</div>';
+    cds.forEach(function(r,i){
+      h+='<div class="itk" style="align-items:center">'+
+        '<div style="width:24px;height:24px;border-radius:50%;background:#b45309;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600">C</div>'+
+        '<div class="itkb"><div class="itkt">'+e(r.name)+'</div><div style="font-size:12px;color:#888882">'+(r.target?e(r.target):"No date")+'</div></div>'+
+        '<button onclick="ST.iCd.splice('+i+',1);rIPrev()" style="font-size:20px;color:#888882;cursor:pointer;padding:0 4px;border:none;background:none;flex-shrink:0;min-width:32px">&#215;</button>'+
+      '</div>';
+    });
+  }
   h+='<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px">'+
-    '<button class="btn" onclick="ST.ip=[];ST.ir=[];ST.ie=[];rMn()">Clear</button>'+
+    '<button class="btn" onclick="ST.ip=[];ST.ir=[];ST.iRt=[];ST.iEp=[];ST.iCd=[];ST.ie=[];rMn()">Clear</button>'+
     '<button class="btn pri" onclick="cImport()">Add '+total+' item'+(total!==1?'s':'')+'  \u2192</button>'+
   '</div>';
   prev.innerHTML=h;
@@ -914,9 +967,9 @@ function vImport(){
   if(ST.is){
     okHtml='<div class="iok">Successfully imported '+ST.is+' item'+(ST.is!==1?'s':'')+'!</div>';
   }
-  return '<div class="mnp"><div class="pgt">Import from Claude</div><div class="pgs">Paste a LIFEOS block from Claude to import tasks and rules</div>'+
+  return '<div class="mnp"><div class="pgt">Import from Claude</div><div class="pgs">Paste a LIFEOS block from Claude to import any items</div>'+
     '<div class="ib">'+
-      '<div class="ic">LIFEOS\n- Task title | Project | Priority | Due date | Notes\n- Fix bug | GSK | Urgent | 25 Mar 2026 | Details here\n\nLIFEOS-RULES\n- Rule text here</div>'+
+      '<div class="ic">LIFEOS\n- Task title | Project | Priority | Due date | Notes\n\nLIFEOS-RULES\n- Rule text here\n\nLIFEOS-ROUTINE\n- Item title | Morning/Evening/Both/Anytime\n\nLIFEOS-EVENINGPREP\n- Prep item here\n\nLIFEOS-COUNTDOWN\n- Event name | 2026-06-15T09:00</div>'+
       '<textarea class="ita" id="imp-ta" placeholder="Paste LIFEOS block here..." oninput="pInp()"></textarea>'+
       '<div id="iprev" style="margin-top:14px"></div>'+
     '</div>'+okHtml+'</div>';
@@ -1023,6 +1076,7 @@ function tickCountdowns(){
   });
 }
 var CHANGELOG=[
+  {v:"v5.3",date:"Mar 2026",changes:["Paste from Claude now supports all item types: tasks, credit rules, routine items, evening prep, and countdowns","New LIFEOS-ROUTINE, LIFEOS-EVENINGPREP, LIFEOS-COUNTDOWN block formats","Universal Claude Custom Instructions for generating paste blocks from any chat"],fixes:[]},
   {v:"v5.2",date:"Mar 2026",changes:["Input tab - unified hub to add tasks, routine items, evening prep, credit rules, countdowns, and paste from Claude","Input tab sits right below Today in sidebar with tabbed sections"],fixes:[]},
   {v:"v5.1",date:"Mar 2026",changes:["Task editing & deletion","Recurring/repeating tasks","Search & filter on Today view","JSON data backup export & import","Daily briefing at top of Today view"],fixes:[]},
   {v:"v5.0",date:"Mar 2026",changes:["Cloud sync via Firebase - data saved online and accessible from any device","PIN-based login - set a 4-6 digit PIN to protect your data","Offline support - app works without internet and syncs when back online","Real-time sync - changes on one device appear on others automatically","Sync status indicator in sidebar and mobile topbar"],fixes:[]},
@@ -1282,20 +1336,53 @@ function inpAddCd(){
 window.inpAddCd=inpAddCd;
 function inpPaste(){
   var ta=document.getElementById("inp-paste-ta");if(!ta)return;
-  var raw=ta.value.trim();if(!raw){ST.ip=[];ST.ir=[];rIPrev();return;}
+  var raw=ta.value.trim();if(!raw){ST.ip=[];ST.ir=[];ST.iRt=[];ST.iEp=[];ST.iCd=[];rIPrev();return;}
   var lines=raw.split("\n").map(function(l){return l.trim();}).filter(Boolean);
-  var tasks=[];var errs=[];var rules=[];
-  var rs=lines.findIndex(function(l){return /^LIFEOS-RULES/i.test(l);});
-  var ts2=lines.findIndex(function(l){return /^LIFEOS(?!-RULES)/i.test(l);});
-  var tLines=(ts2>=0?lines.slice(ts2+1,rs>ts2&&rs>=0?rs:undefined):(rs<0?lines:[])).filter(function(l){return l.startsWith("-");});
-  tLines.forEach(function(line,i){
-    var c=line.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});
-    if(!pts[0])return;var proj=pts[1]?fzP(pts[1]):null;
-    tasks.push({title:pts[0],project:proj,priority:pPri(pts[2]),dueDate:pDate(pts[3]),notes:pts[4]||"",ok:!!proj,_i:i,_p:proj||PROJ[0]});
-    if(!proj&&pts[1])errs.push(pts[1]+" not recognised");
+  var tasks=[];var errs=[];var rules=[];var routines=[];var epItems=[];var countdowns=[];
+  var headers=[];
+  lines.forEach(function(l,i){
+    if(/^LIFEOS-RULES/i.test(l))headers.push({type:"rules",idx:i});
+    else if(/^LIFEOS-ROUTINE/i.test(l))headers.push({type:"routine",idx:i});
+    else if(/^LIFEOS-EVENINGPREP/i.test(l))headers.push({type:"ep",idx:i});
+    else if(/^LIFEOS-COUNTDOWN/i.test(l))headers.push({type:"cd",idx:i});
+    else if(/^LIFEOS/i.test(l))headers.push({type:"tasks",idx:i});
   });
-  if(rs>=0){lines.slice(rs+1).filter(function(l){return l.startsWith("-");}).forEach(function(l){var t=l.replace(/^-\s*/,"").trim();if(t)rules.push(t);});}
-  ST.ip=tasks;ST.ir=rules;ST.ie=errs;rIPrev();
+  function linesForHeader(hi){
+    var start=headers[hi].idx+1;
+    var end=(hi+1<headers.length)?headers[hi+1].idx:lines.length;
+    return lines.slice(start,end).filter(function(l){return l.startsWith("-");});
+  }
+  headers.forEach(function(hdr,hi){
+    var hLines=linesForHeader(hi);
+    if(hdr.type==="tasks"){
+      hLines.forEach(function(line,i){
+        var c=line.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});
+        if(!pts[0])return;var proj=pts[1]?fzP(pts[1]):null;
+        tasks.push({title:pts[0],project:proj,priority:pPri(pts[2]),dueDate:pDate(pts[3]),notes:pts[4]||"",ok:!!proj,_i:i,_p:proj||PROJ[0]});
+        if(!proj&&pts[1])errs.push(pts[1]+" not recognised");
+      });
+    } else if(hdr.type==="rules"){
+      hLines.forEach(function(l){var t=l.replace(/^-\s*/,"").trim();if(t)rules.push(t);});
+    } else if(hdr.type==="routine"){
+      hLines.forEach(function(l){
+        var c=l.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});
+        if(!pts[0])return;
+        var slot=pts[1]?pts[1].toLowerCase():"am";
+        if(slot==="morning")slot="am";if(slot==="evening")slot="eve";
+        if(["am","eve","both","anytime"].indexOf(slot)<0)slot="am";
+        routines.push({title:pts[0],time:slot});
+      });
+    } else if(hdr.type==="ep"){
+      hLines.forEach(function(l){var t=l.replace(/^-\s*/,"").trim();if(t)epItems.push(t);});
+    } else if(hdr.type==="cd"){
+      hLines.forEach(function(l){
+        var c=l.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});
+        if(!pts[0])return;
+        countdowns.push({name:pts[0],target:pts[1]||""});
+      });
+    }
+  });
+  ST.ip=tasks;ST.ir=rules;ST.iRt=routines;ST.iEp=epItems;ST.iCd=countdowns;ST.ie=errs;rIPrev();
 }
 window.inpPaste=inpPaste;
 function vInput(){
@@ -1354,8 +1441,8 @@ function vInput(){
     '</div>';
   } else if(ST.inpTab==="paste"){
     body='<div class="inp-form"><div class="aft">Paste from Claude</div>'+
-      '<div class="pgs" style="margin-bottom:12px">Paste a LIFEOS block to import tasks and rules</div>'+
-      '<div class="ic">LIFEOS\n- Task title | Project | Priority | Due date | Notes\n\nLIFEOS-RULES\n- Rule text here</div>'+
+      '<div class="pgs" style="margin-bottom:12px">Paste a LIFEOS block to import any items</div>'+
+      '<div class="ic">LIFEOS\n- Task title | Project | Priority | Due date | Notes\n\nLIFEOS-RULES\n- Rule text here\n\nLIFEOS-ROUTINE\n- Item title | Morning/Evening/Both/Anytime\n\nLIFEOS-EVENINGPREP\n- Prep item here\n\nLIFEOS-COUNTDOWN\n- Event name | 2026-06-15T09:00</div>'+
       '<textarea class="ita" id="inp-paste-ta" placeholder="Paste LIFEOS block here..." oninput="inpPaste()"></textarea>'+
       '<div id="iprev" style="margin-top:14px"></div>'+
     '</div>';
