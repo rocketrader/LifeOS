@@ -779,11 +779,20 @@ try{var data=JSON.parse(ta.value);if(!data.tasks||!Array.isArray(data.tasks)){al
 ST.tasks=data.tasks||[];ST.rem=data.rem||[];ST.ep=data.ep||{items:[],lr:""};ST.rt=data.rt||{checks:{},custom:[],customMR:[],customER:[],lr:""};if(!ST.rt.customMR)ST.rt.customMR=[];if(!ST.rt.customER)ST.rt.customER=[];ST.cd=data.cd||[];sl("tasks",ST.tasks);sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);sl("cd",ST.cd);alert("Data restored!");rSb();rMn();}catch(ex){alert("Invalid JSON: "+ex.message);}}
 function postponeTask(id){
   var t=ST.tasks.find(function(x){return x.id===id;});if(!t)return;
-  var nd=prompt("New due date (e.g. 2026-04-01 or 15 Apr 2026):");
-  if(!nd||!nd.trim())return;
-  var parsed=pDate(nd.trim());
-  if(!parsed){alert("Could not parse that date. Try YYYY-MM-DD format.");return;}
-  t.dueDate=parsed;sl("tasks",ST.tasks);rSb();rMn();
+  /* Create a hidden date input and open the native calendar picker */
+  var old=document.getElementById("ppn-picker");if(old)old.remove();
+  var inp=document.createElement("input");
+  inp.type="date";inp.id="ppn-picker";
+  inp.style.cssText="position:fixed;top:-9999px;left:-9999px;opacity:0;";
+  if(t.dueDate)inp.value=t.dueDate;
+  inp.addEventListener("change",function(){
+    if(inp.value){t.dueDate=inp.value;sl("tasks",ST.tasks);rSb();rMn();}
+    inp.remove();
+  });
+  /* Remove if user cancels (blur without change) */
+  inp.addEventListener("blur",function(){setTimeout(function(){var el=document.getElementById("ppn-picker");if(el)el.remove();},300);});
+  document.body.appendChild(inp);
+  inp.focus();inp.click();
 }
 window.postponeTask=postponeTask;
 window.editTask=editTask;window.saveEditTask=saveEditTask;window.cancelEdit=cancelEdit;window.deleteTask=deleteTask;
