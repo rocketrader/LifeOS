@@ -171,7 +171,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tldot.m{background:#eff6ff;color:#1d4ed8;border:2px solid #bfdbfe}
 .tldot.l{background:#f0fdf4;color:#15803d;border:2px solid #bbf7d0}
 .tldd2{width:10px;height:10px;border-radius:50%;display:inline-block;background:#15803d;opacity:.5;margin:auto}
-.rtg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.rtg{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px}
 .rtch{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .rtct{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
 .rtct.am{color:#b45309}.rtct.eve{color:#5b21b6}
@@ -1137,12 +1137,12 @@ function tickCountdowns(){
   });
 }
 var CHANGELOG=[
-  {v:"v5.4",date:"Mar 2026",changes:["Claude auto-send - Claude can push items directly to LifeOS via Firebase inbox","Items from Claude appear automatically with a toast notification","No copy-paste needed - just tell Claude to add it"],fixes:[]},
-  {v:"v5.3",date:"Mar 2026",changes:["Paste from Claude now supports all item types: tasks, credit rules, routine items, evening prep, and countdowns","New LIFEOS-ROUTINE, LIFEOS-EVENINGPREP, LIFEOS-COUNTDOWN block formats","Universal Claude Custom Instructions for generating paste blocks from any chat"],fixes:[]},
-  {v:"v5.2",date:"Mar 2026",changes:["Input tab - unified hub to add tasks, routine items, evening prep, credit rules, countdowns, and paste from Claude","Input tab sits right below Today in sidebar with tabbed sections"],fixes:[]},
-  {v:"v5.1",date:"Mar 2026",changes:["Task editing & deletion","Recurring/repeating tasks","Search & filter on Today view","JSON data backup export & import","Daily briefing at top of Today view"],fixes:[]},
-  {v:"v5.0",date:"Mar 2026",changes:["Cloud sync via Firebase - data saved online and accessible from any device","PIN-based login - set a 4-6 digit PIN to protect your data","Offline support - app works without internet and syncs when back online","Real-time sync - changes on one device appear on others automatically","Sync status indicator in sidebar and mobile topbar"],fixes:[]},
-  {v:"v4.7",date:"Mar 2026",changes:["Restored 8 missing functions that were lost in v4.5-4.6 rebuilds","All tabs now working again"],fixes:["cdInterval undeclared - caused ReferenceError on every nav click","vImport function missing - Import tab crashed","loadCd/saveCd/calcCountdown/cdUnit missing - Countdown tab crashed","addCdEvent/editCdEvent/deleteCdEvent missing","Forward view inline onscroll replaced with addEventListener for iOS Safari"]},
+  {v:"v5.4",date:"Mar 2026",size:"113 KB",changes:["Claude auto-send - Claude can push items directly to LifeOS via Firebase inbox","Items from Claude appear automatically with a toast notification","No copy-paste needed - just tell Claude to add it","Forward view: text wrapping, black X markers, light blue today column","Daily routine: morning and evening stacked vertically"],fixes:[]},
+  {v:"v5.3",date:"Mar 2026",size:"100 KB",changes:["Paste from Claude now supports all item types: tasks, credit rules, routine items, evening prep, and countdowns","New LIFEOS-ROUTINE, LIFEOS-EVENINGPREP, LIFEOS-COUNTDOWN block formats","Universal Claude Custom Instructions for generating paste blocks from any chat"],fixes:[]},
+  {v:"v5.2",date:"Mar 2026",size:"95 KB",changes:["Input tab - unified hub to add tasks, routine items, evening prep, credit rules, countdowns, and paste from Claude","Input tab sits right below Today in sidebar with tabbed sections"],fixes:[]},
+  {v:"v5.1",date:"Mar 2026",size:"88 KB",changes:["Task editing & deletion","Recurring/repeating tasks","Search & filter on Today view","JSON data backup export & import","Daily briefing at top of Today view"],fixes:[]},
+  {v:"v5.0",date:"Mar 2026",size:"80 KB",changes:["Cloud sync via Firebase - data saved online and accessible from any device","PIN-based login - set a 4-6 digit PIN to protect your data","Offline support - app works without internet and syncs when back online","Real-time sync - changes on one device appear on others automatically","Sync status indicator in sidebar and mobile topbar"],fixes:[]},
+  {v:"v4.7",date:"Mar 2026",size:"75 KB",changes:["Restored 8 missing functions that were lost in v4.5-4.6 rebuilds","All tabs now working again"],fixes:["cdInterval undeclared - caused ReferenceError on every nav click","vImport function missing - Import tab crashed","loadCd/saveCd/calcCountdown/cdUnit missing - Countdown tab crashed","addCdEvent/editCdEvent/deleteCdEvent missing","Forward view inline onscroll replaced with addEventListener for iOS Safari"]},
   {v:"v4.6",date:"Mar 2026",changes:["Forward view fixed - removed window.innerHeight SecurityError"],fixes:["window.innerHeight blocked in iframe","replaced inline onscroll with named function","height via CSS not JS"]},
   {v:"v4.5",date:"Mar 2026",changes:["Forward view tab - tasks fixed left, 90 days scrolling right, X on due date"],fixes:[]},
   {v:"v4.3",date:"Mar 2026",changes:["Month view renamed to Calendar tab"],fixes:[]},
@@ -1262,7 +1262,7 @@ function vVersions(){
     var fixes=c.fixes.map(function(x){return '<li class="fix">'+e(x)+'</li>';}).join('');
     logHtml+='<div class="vh-item">'+
       '<div class="vh-header"><span class="vh-ver">'+c.v+'</span>'+
-        '<div style="display:flex;align-items:center;gap:8px"><span class="vh-date">'+c.date+'</span>'+
+        '<div style="display:flex;align-items:center;gap:8px">'+(c.size?'<span class="vh-date">'+c.size+'</span>':'')+'<span class="vh-date">'+c.date+'</span>'+
         '<span class="vh-badge '+curCls+'">'+curLabel+'</span></div>'+
       '</div>'+
       '<ul class="vh-changes">'+changes+fixes+'</ul>'+
