@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   LifeOS - Personal Task Manager
-  Version: v5.4 (cloud sync)
+  Version: v5.5 (timed routines)
 
   ARCHITECTURE:
   - Single HTML file, all CSS and JS inline
@@ -45,7 +45,7 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Life OS v5.4</title>
+<title>Life OS v5.5</title>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
@@ -112,6 +112,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ta{font-size:13px;color:#888882;display:inline-block;transition:transform .2s}
 .ta.op{transform:rotate(180deg)}
 .tn{padding:12px 16px 14px 50px;font-size:13px;color:#555550;line-height:1.7;border-top:1px solid #e0ddd8;background:#f0eeeb}
+.tn-acts{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e0ddd8}
+.tn-btn{padding:6px 14px;border:1px solid #e0ddd8;background:#ffffff;border-radius:6px;font-size:12px;cursor:pointer;color:#555550;font-family:inherit}
+.tn-btn.del{color:#c0392b;border-color:#f5c6c2}
+.ppn-btn{padding:4px 10px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:6px;font-size:11px;cursor:pointer;color:#1d4ed8;font-family:inherit;font-weight:500;white-space:nowrap}
 .sl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#888882;margin:20px 0 10px}
 .sl:first-child{margin-top:0}
 .sl.ov{color:#c0392b}.sl.td{color:#b45309}.sl.sn{color:#1d4ed8}
@@ -171,6 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tldot.m{background:#eff6ff;color:#1d4ed8;border:2px solid #bfdbfe}
 .tldot.l{background:#f0fdf4;color:#15803d;border:2px solid #bbf7d0}
 .tldd2{width:10px;height:10px;border-radius:50%;display:inline-block;background:#15803d;opacity:.5;margin:auto}
+/* Timed routine styles */
 .rtg{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px}
 .rtch{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .rtct{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
@@ -179,18 +184,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .rtpb{height:100%;border-radius:2px;transition:width .3s}
 .rtpb.am{background:#b45309}.rtpb.eve{background:#5b21b6}
 .rtcn{font-size:11px;color:#888882}
-.rtca{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:#888882;padding:12px 0 5px;font-weight:500}
-.rtca:first-child{padding-top:0}
 .rti{display:flex;align-items:center;gap:11px;padding:12px 14px;background:#ffffff;border:1px solid #e0ddd8;cursor:pointer;min-height:48px;position:relative}
 .rti:first-child{border-radius:8px 8px 0 0}
 .rti:last-child{border-radius:0 0 8px 8px}
 .rti:only-child{border-radius:8px}
 .rti+.rti{border-top:none}
+.rti.hard-stop{background:#fef2f2;border-color:#fca5a5}
 .rtik{width:20px;height:20px;border-radius:4px;border:1.5px solid #ccc9c3;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
 .rtik.dn{background:#f0fdf4;border-color:#15803d;color:#15803d}.rtik.dn::after{content:"\2713"}
 .rtit2{font-size:13px;color:#1a1a18;flex:1}.rtit2.dn{text-decoration:line-through;color:#888882}
-.rtw{background:#f5f3ff;border-left:3px solid #8b5cf6!important}
+.rt-time{font-size:11px;font-weight:600;color:#555550;min-width:42px;text-align:right;flex-shrink:0}
+.rt-dur{font-size:10px;color:#888882;margin-left:4px}
+.rt-hard-lbl{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:#dc2626;background:#fef2f2;border:1px solid #fca5a5;padding:2px 6px;border-radius:4px;margin-left:8px;flex-shrink:0}
+.rt-sub{padding-left:45px}
+.rt-sub .rti{min-height:40px;padding:8px 14px;background:#f9fafb;border-color:#e5e7eb}
+.rt-sub .rtik{width:16px;height:16px;border-radius:3px;font-size:8px}
+.rt-sub .rtit2{font-size:12px;color:#555550}
 .rtab{display:flex;align-items:center;gap:6px;margin-top:8px;padding:8px 12px;border-radius:8px;border:1px dashed #ccc9c3;background:transparent;color:#888882;font-size:13px;font-family:inherit;cursor:pointer;width:100%;min-height:40px}
+.rtab-sm{margin-top:4px;margin-bottom:4px;padding:6px 12px;min-height:32px;font-size:11px;margin-left:45px;width:auto}
+.rt-anytime{margin-top:16px;padding-top:12px;border-top:1px solid #e0ddd8}
+.rtca{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:#888882;padding:12px 0 5px;font-weight:500}
+.rtca:first-child{padding-top:0}
+.rtw{background:#f5f3ff;border-left:3px solid #8b5cf6!important}
 .ib{background:#ffffff;border:1px solid #ccc9c3;border-radius:12px;padding:16px;margin-bottom:14px}
 .ic{font-family:monospace;font-size:12px;background:#EFEDE9;border:1px solid #e0ddd8;border-radius:8px;padding:12px 14px;line-height:1.8;color:#555550;margin-bottom:12px;white-space:pre;overflow-x:auto}
 .ita{width:100%;min-height:140px;padding:12px;border:1px solid #ccc9c3;border-radius:8px;font-family:monospace;font-size:13px;background:#EFEDE9;color:#1a1a18;outline:none;resize:none;line-height:1.7;-webkit-appearance:none}
@@ -406,7 +421,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </div>
 <div id="topbar">
   <button class="tb-ham" onclick="toggleSb()"><span></span><span></span><span></span></button>
-  <span class="tb-logo">Life OS <span class="tb-ver">v5.4</span></span>
+  <span class="tb-logo">Life OS <span class="tb-ver">v5.5</span></span>
   <div id="sync-ind-mob" class="sync-ind" style="display:none"></div>
   <button class="tb-imp" onclick="nav('import')">Import</button>
 </div>
@@ -415,7 +430,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="app"><aside id="sb"></aside><main id="mn"></main></div>
 <script>
 var cdInterval=null;
-var V="v5.4";
+var V="v5.5";
 /* ── Cloud Sync (Firebase) ── */
 var FBCFG={
   apiKey:"AIzaSyCuhIldfs8yjJKhzoV_ENff5pTXoegXh2I",
@@ -605,28 +620,49 @@ var PC={Urgent:"u",High:"h",Medium:"m",Low:"l"};
 var PX={Urgent:"cu",High:"ch",Medium:"cm",Low:"cl"};
 var DN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 var MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-var RD=[
-  {id:"rt1",cat:"Health & Wellbeing",title:"Mindfulness meditation",time:"am",days:"daily"},
-  {id:"rt2",cat:"Health & Wellbeing",title:"Autotalk band",time:"am",days:"daily"},
-  {id:"rt3",cat:"Health & Wellbeing",title:"Teeth whitener",time:"both",days:"daily"},
-  {id:"rt4",cat:"Health & Wellbeing",title:"Rewire brain",time:"am",days:"daily"},
-  {id:"rt5",cat:"Health & Wellbeing",title:"Moisturiser",time:"eve",days:"daily"},
-  {id:"rt6",cat:"Sleep",title:"Skin plasters",time:"eve",days:[1,2,3,4,5]},
-  {id:"rt7",cat:"Health & Wellbeing",title:"Gabor healing",time:"anytime",days:[0,6]},
-  {id:"rt8",cat:"Health & Wellbeing",title:"Shave",time:"anytime",days:[3,6]},
-  {id:"rt9",cat:"Health & Wellbeing",title:"Nail clip",time:"anytime",days:[6]},
-  {id:"rt10",cat:"Health & Wellbeing",title:"Ear hair & wax",time:"anytime",days:[6]},
-  {id:"rt11",cat:"Sleep",title:"Magnesium",time:"eve",days:"daily"},
-  {id:"rt12",cat:"Sleep",title:"Amitriptyline",time:"eve",days:"daily"},
-  {id:"rt13",cat:"Sleep",title:"Venlefaxine",time:"eve",days:"daily"},
-  {id:"rt14",cat:"Sleep",title:"Melatonin",time:"eve",days:"daily"},
-  {id:"rt15",cat:"Sleep",title:"Skin cream",time:"eve",days:"daily"},
-  {id:"rt16",cat:"Deeper",title:"Celebrate",time:"eve",days:"daily"},
-  {id:"rt17",cat:"Deeper",title:"Review Fer notes",time:"eve",days:"daily"},
-  {id:"rt18",cat:"Maintenance",title:"Flat clean",time:"anytime",days:[6]},
-  {id:"rt19",cat:"Maintenance",title:"Iron shirts",time:"anytime",days:[6]},
-  {id:"rt20",cat:"Maintenance",title:"Polish shoes",time:"anytime",days:[6]},
-  {id:"rt21",cat:"Maintenance",title:"Pick up post",time:"anytime",days:[6]},
+/* Morning routine - timed schedule with durations and hard stops */
+var MR=[
+  {id:"mr1",title:"Coffee",dur:10,hard:null,sub:[]},
+  {id:"mr2",title:"Breakfast",dur:10,hard:null,sub:[]},
+  {id:"mr3",title:"Mindfulness meditation",dur:10,hard:null,sub:[]},
+  {id:"mr4",title:"Autotalk band",dur:5,hard:null,sub:[]},
+  {id:"mr5",title:"Teeth whitener",dur:5,hard:null,sub:[]},
+  {id:"mr6",title:"Rewire brain",dur:5,hard:null,sub:[]},
+  {id:"mr7",title:"Switch off mains",dur:2,hard:null,sub:[]},
+  {id:"mr8",title:"Check bedroom",dur:2,hard:null,sub:[]},
+  {id:"mr9",title:"Check taps",dur:1,hard:null,sub:[]},
+  {id:"mr10",title:"Shower",dur:15,hard:"07:10",sub:["Face gel","Brush teeth","Face drops","Floss","Moisturiser","Get dressed"]},
+  {id:"mr11",title:"Jacket, headphones & earplugs",dur:2,hard:null,sub:[]},
+  {id:"mr12",title:"Two phones in hand",dur:1,hard:null,sub:[]},
+  {id:"mr13",title:"GSK tag",dur:1,hard:null,sub:[]},
+  {id:"mr14",title:"Final walk-through flat",dur:2,hard:null,sub:[]},
+  {id:"mr15",title:"EXIT",dur:0,hard:"07:45",sub:[]}
+];
+var MR_START="06:30";
+/* Evening routine */
+var ER=[
+  {id:"er1",title:"Moisturiser",dur:5,hard:null,sub:[]},
+  {id:"er2",title:"Skin plasters",dur:2,hard:null,sub:[]},
+  {id:"er3",title:"Magnesium",dur:1,hard:null,sub:[]},
+  {id:"er4",title:"Amitriptyline",dur:1,hard:null,sub:[]},
+  {id:"er5",title:"Venlefaxine",dur:1,hard:null,sub:[]},
+  {id:"er6",title:"Melatonin",dur:1,hard:null,sub:[]},
+  {id:"er7",title:"Skin cream",dur:3,hard:null,sub:[]},
+  {id:"er8",title:"Teeth whitener",dur:5,hard:null,sub:[]},
+  {id:"er9",title:"Celebrate",dur:5,hard:null,sub:[]},
+  {id:"er10",title:"Review Fer notes",dur:10,hard:null,sub:[]}
+];
+var ER_START="21:00";
+/* Legacy items kept for anytime/weekend */
+var RD_ANYTIME=[
+  {id:"rt7",title:"Gabor healing",days:[0,6]},
+  {id:"rt8",title:"Shave",days:[3,6]},
+  {id:"rt9",title:"Nail clip",days:[6]},
+  {id:"rt10",title:"Ear hair & wax",days:[6]},
+  {id:"rt18",title:"Flat clean",days:[6]},
+  {id:"rt19",title:"Iron shirts",days:[6]},
+  {id:"rt20",title:"Polish shoes",days:[6]},
+  {id:"rt21",title:"Pick up post",days:[6]}
 ];
 var DT=[
   {id:"ch1",project:"Credit Health",title:'Fix Monzo address & "Null" title',priority:"Urgent",dueDate:"2026-03-20",notes:"App -> Profile. Fix Southall Southall, UB24GX spacing, and Null title.",completed:false},
@@ -634,21 +670,21 @@ var DT=[
   {id:"ch3",project:"Credit Health",title:"Fix PayPal postcode: UB2 4GZ to UB2 4GX",priority:"Urgent",dueDate:"2026-03-20",notes:"PayPal account settings. Wrong postcode showing on Experian.",completed:false},
   {id:"ch4",project:"Credit Health",title:"Call NatWest - update address",priority:"Urgent",dueDate:"2026-03-20",notes:"03457 888 444. Remove old SE24 0EA address, confirm UB2 4GX.",completed:false},
   {id:"ch5",project:"Credit Health",title:"Check Equifax file at equifax.co.uk",priority:"Urgent",dueDate:"2026-03-20",notes:"Free account. Confirm HSBC, NatWest, PayPal are showing.",completed:false},
-  {id:"ch6",project:"Credit Health",title:"Write to CheckMyFile about Equifax gap",priority:"High",dueDate:"2026-03-25",notes:"Email with search ref 1765B423.",completed:false},
-  {id:"ch7",project:"Credit Health",title:"Fix Klarna Card address",priority:"Medium",dueDate:"2026-03-31",notes:"From House typo + London not Southall. Low priority - 0 balance.",completed:false},
-  {id:"ch8",project:"Credit Health",title:"Pull fresh CheckMyFile report",priority:"High",dueDate:"2026-09-01",notes:"Verify all 3 bureaus reflect cleared balances.",completed:false},
+  {id:"ch6",project:"Credit Health",title:"Write to CheckMyFile about Equifax gap",priority:"Normal",dueDate:"2026-03-25",notes:"Email with search ref 1765B423.",completed:false},
+  {id:"ch7",project:"Credit Health",title:"Fix Klarna Card address",priority:"Normal",dueDate:"2026-03-31",notes:"From House typo + London not Southall. Low priority - 0 balance.",completed:false},
+  {id:"ch8",project:"Credit Health",title:"Pull fresh CheckMyFile report",priority:"Normal",dueDate:"2026-09-01",notes:"Verify all 3 bureaus reflect cleared balances.",completed:false},
   {id:"gsk1",project:"GSK",title:"Check GSK payslip tax code (1257L)",priority:"Urgent",dueDate:"2026-03-20",notes:"First GSK pay on 20 March. Must be 1257L. Expect ~4000-4200 net.",completed:false},
-  {id:"p1",project:"Portfolio",title:"Begin de-risking investments to cash",priority:"High",dueDate:"2026-04-01",notes:"Sell stocks/crypto gradually into cash. Target ~100k liquid by Oct 2026.",completed:false},
-  {id:"p2",project:"Portfolio",title:"Consider Trading212 ISA to clear Monzo Flex early",priority:"Medium",dueDate:"2026-04-15",notes:"4471 available. Flexible ISA.",completed:false},
-  {id:"p3",project:"Portfolio",title:"Open dedicated savings account for deposit",priority:"Medium",dueDate:"2026-05-01",notes:"Starling or Marcus.",completed:false},
+  {id:"p1",project:"Portfolio",title:"Begin de-risking investments to cash",priority:"Normal",dueDate:"2026-04-01",notes:"Sell stocks/crypto gradually into cash. Target ~100k liquid by Oct 2026.",completed:false},
+  {id:"p2",project:"Portfolio",title:"Consider Trading212 ISA to clear Monzo Flex early",priority:"Normal",dueDate:"2026-04-15",notes:"4471 available. Flexible ISA.",completed:false},
+  {id:"p3",project:"Portfolio",title:"Open dedicated savings account for deposit",priority:"Normal",dueDate:"2026-05-01",notes:"Starling or Marcus.",completed:false},
   {id:"fb1",project:"Flat Buying",title:"Negotiate lease extension at Frome House",priority:"Urgent",dueDate:"2026-08-01",notes:"Lease expires end Sept 2026. Need 6-month extension to March 2027.",completed:false},
   {id:"fb2",project:"Flat Buying",title:"Ensure bank statements clean from Aug 2026",priority:"Urgent",dueDate:"2026-08-01",notes:"No gambling, no BNPL, no payday loans.",completed:false},
-  {id:"fb3",project:"Flat Buying",title:"Gather mortgage documents",priority:"High",dueDate:"2026-09-01",notes:"3x GSK payslips, M&S P60, 3-6 months bank statements.",completed:false},
+  {id:"fb3",project:"Flat Buying",title:"Gather mortgage documents",priority:"Normal",dueDate:"2026-09-01",notes:"3x GSK payslips, M&S P60, 3-6 months bank statements.",completed:false},
   {id:"fb4",project:"Flat Buying",title:"Instruct whole-of-market mortgage broker",priority:"Urgent",dueDate:"2026-10-01",notes:"L&C or Habito. Tell broker about Argentina relocation plan upfront.",completed:false},
-  {id:"fb5",project:"Flat Buying",title:"Instruct leasehold-specialist solicitor",priority:"High",dueDate:"2026-10-15",notes:"Must check subletting clause, lease 90+ years, EWS1, service charge under 300/month.",completed:false},
+  {id:"fb5",project:"Flat Buying",title:"Instruct leasehold-specialist solicitor",priority:"Normal",dueDate:"2026-10-15",notes:"Must check subletting clause, lease 90+ years, EWS1, service charge under 300/month.",completed:false},
   {id:"fb6",project:"Flat Buying",title:"Get Agreement in Principle",priority:"Urgent",dueDate:"2026-11-01",notes:"Via broker. Soft search only.",completed:false},
-  {id:"fb7",project:"Flat Buying",title:"Register with estate agents in target areas",priority:"High",dueDate:"2026-11-01",notes:"Walthamstow E17, Lewisham SE13, Stratford E15, Woolwich SE18.",completed:false},
-  {id:"fb8",project:"Flat Buying",title:"Consult expat tax specialist",priority:"High",dueDate:"2027-01-01",notes:"Blick Rothenberg or Buzzacott.",completed:false},
+  {id:"fb7",project:"Flat Buying",title:"Register with estate agents in target areas",priority:"Normal",dueDate:"2026-11-01",notes:"Walthamstow E17, Lewisham SE13, Stratford E15, Woolwich SE18.",completed:false},
+  {id:"fb8",project:"Flat Buying",title:"Consult expat tax specialist",priority:"Normal",dueDate:"2027-01-01",notes:"Blick Rothenberg or Buzzacott.",completed:false},
 ];
 var DR=[
   {id:"r1",title:"Pay HSBC 1100/month - clears May 2026",active:true},
@@ -669,7 +705,7 @@ var DE=[
   {id:"ep7",title:"Set alarm"},
   {id:"ep8",title:"Lock up / security check"},
 ];
-var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,iRt:[],iEp:[],iCd:[],cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null,inpTab:"task",inpOk:""};
+var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],customMR:[],customER:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,iRt:[],iEp:[],iCd:[],cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null,inpTab:"task",inpOk:""};
 function gl(k){try{return JSON.parse(localStorage.getItem("los_"+k));}catch(ex){return null;}}
 function sl(k,v){try{localStorage.setItem("los_"+k,JSON.stringify(v));}catch(ex){}queueSync();}
 function ts(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -693,13 +729,38 @@ function dRule(id){ST.rem=ST.rem.filter(function(x){return x.id!==id;});sl("rem"
 function aRule(){ST.rem.push({id:"r"+Date.now(),title:"",active:true});sl("rem",ST.rem);rMn();setTimeout(function(){var els=document.querySelectorAll(".rlt");if(els.length)els[els.length-1].focus();},50);}
 function aRt(slot){var t=prompt("New routine item:");if(!t||!t.trim())return;var c=ST.rt.custom||[];c.push({id:"rc"+Date.now(),cat:"Custom",title:t.trim(),time:slot==="am"?"am":slot==="eve"?"eve":"anytime",days:"daily"});ST.rt.custom=c;sl("rt",ST.rt);rMn();}
 function dRt(id){ST.rt.custom=(ST.rt.custom||[]).filter(function(x){return x.id!==id;});delete ST.rt.checks[id+"_am"];delete ST.rt.checks[id+"_eve"];delete ST.rt.checks[id+"_any"];sl("rt",ST.rt);rMn();}
+/* Add step at position in timed routine */
+function aRtAt(customKey,afterIdx,slot){
+  var t=prompt("New step:");if(!t||!t.trim())return;
+  var durStr=prompt("Duration in minutes (e.g. 5):");
+  var dur=parseInt(durStr)||5;
+  var arr=ST.rt[customKey]||[];
+  arr.push({id:"rc"+Date.now(),title:t.trim(),dur:dur,hard:null,sub:[],pos:afterIdx+1});
+  ST.rt[customKey]=arr;sl("rt",ST.rt);rMn();
+}
+/* Add sub-item to a routine step */
+function aRtSub(parentId,slot){
+  var t=prompt("New sub-item:");if(!t||!t.trim())return;
+  /* find in MR or ER */
+  var found=null;
+  MR.forEach(function(it){if(it.id===parentId)found=it;});
+  if(!found)ER.forEach(function(it){if(it.id===parentId)found=it;});
+  if(found){found.sub.push(t.trim());sl("rt",ST.rt);rMn();}
+}
+/* Delete custom item from timed routine */
+function dRtC(id,customKey){
+  ST.rt[customKey]=(ST.rt[customKey]||[]).filter(function(x){return x.id!==id;});
+  delete ST.rt.checks[id+"_am"];delete ST.rt.checks[id+"_eve"];
+  sl("rt",ST.rt);rMn();
+}
+window.aRtAt=aRtAt;window.aRtSub=aRtSub;window.dRtC=dRtC;
 function tTld(){ST.tld=!ST.tld;rMn();}
 function sTlr(m){ST.tlm=m;rMn();}
 window.nav=nav;window.navP=navP;window.tick=tick;window.xpnd=xpnd;window.tEp=tEp;window.tRt=tRt;
 window.oAdd=oAdd;window.cAdd=cAdd;window.sRule=sRule;window.dRule=dRule;window.aRule=aRule;
 window.aRt=aRt;window.dRt=dRt;window.tTld=tTld;window.sTlr=sTlr;
 function editTask(id){var t=ST.tasks.find(function(x){return x.id===id;});if(!t)return;var pi=PROJ.indexOf(t.project);ST.editing=id;ST.api=pi>=0?pi:0;rMn();setTimeout(function(){var el=document.getElementById("ef-t");if(el)el.focus();},50);}
-function saveEditTask(){if(!ST.editing)return;var t=ST.tasks.find(function(x){return x.id===ST.editing;});if(!t)return;var ttl=document.getElementById("ef-t")?document.getElementById("ef-t").value.trim():"";var dua=document.getElementById("ef-d")?document.getElementById("ef-d").value.trim():"";var pri=document.getElementById("ef-p")?document.getElementById("ef-p").value:"Medium";var rec=document.getElementById("ef-rec")?document.getElementById("ef-rec").value:"";var not=document.getElementById("ef-n")?document.getElementById("ef-n").value.trim():"";if(!ttl){alert("Title required");return;}
+function saveEditTask(){if(!ST.editing)return;var t=ST.tasks.find(function(x){return x.id===ST.editing;});if(!t)return;var ttl=document.getElementById("ef-t")?document.getElementById("ef-t").value.trim():"";var dua=document.getElementById("ef-d")?document.getElementById("ef-d").value.trim():"";var rawPriE=document.getElementById("ef-p")?document.getElementById("ef-p").value:"Normal";var pri=rawPriE==="Urgent"?"Urgent":"Normal";var rec=document.getElementById("ef-rec")?document.getElementById("ef-rec").value:"";var not=document.getElementById("ef-n")?document.getElementById("ef-n").value.trim():"";if(!ttl){alert("Title required");return;}
 var duep=pDate(dua);if(dua&&!duep){alert("Invalid date");return;}
 t.title=ttl;t.dueDate=duep||"";t.priority=pri;t.recurrence=rec||null;t.notes=not;sl("tasks",ST.tasks);ST.editing=null;rMn();rSb();}
 function cancelEdit(){ST.editing=null;rMn();}
@@ -715,13 +776,22 @@ function exportData(){var data={tasks:ST.tasks,rem:ST.rem,ep:ST.ep,rt:ST.rt,cd:S
 function downloadData(){var data={tasks:ST.tasks,rem:ST.rem,ep:ST.ep,rt:ST.rt,cd:ST.cd};var json=JSON.stringify(data,null,2);var blob=new Blob([json],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download="lifeos-backup-"+ts()+".json";document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
 function importBackup(){var ta=document.getElementById("bkup-imp-ta");if(!ta||!ta.value.trim()){alert("Paste JSON or select a file");return;}
 try{var data=JSON.parse(ta.value);if(!data.tasks||!Array.isArray(data.tasks)){alert("Invalid backup format");return;}
-ST.tasks=data.tasks||[];ST.rem=data.rem||[];ST.ep=data.ep||{items:[],lr:""};ST.rt=data.rt||{checks:{},custom:[],lr:""};ST.cd=data.cd||[];sl("tasks",ST.tasks);sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);sl("cd",ST.cd);alert("Data restored!");rSb();rMn();}catch(ex){alert("Invalid JSON: "+ex.message);}}
+ST.tasks=data.tasks||[];ST.rem=data.rem||[];ST.ep=data.ep||{items:[],lr:""};ST.rt=data.rt||{checks:{},custom:[],customMR:[],customER:[],lr:""};if(!ST.rt.customMR)ST.rt.customMR=[];if(!ST.rt.customER)ST.rt.customER=[];ST.cd=data.cd||[];sl("tasks",ST.tasks);sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);sl("cd",ST.cd);alert("Data restored!");rSb();rMn();}catch(ex){alert("Invalid JSON: "+ex.message);}}
+function postponeTask(id){
+  var t=ST.tasks.find(function(x){return x.id===id;});if(!t)return;
+  var nd=prompt("New due date (e.g. 2026-04-01 or 15 Apr 2026):");
+  if(!nd||!nd.trim())return;
+  var parsed=pDate(nd.trim());
+  if(!parsed){alert("Could not parse that date. Try YYYY-MM-DD format.");return;}
+  t.dueDate=parsed;sl("tasks",ST.tasks);rSb();rMn();
+}
+window.postponeTask=postponeTask;
 window.editTask=editTask;window.saveEditTask=saveEditTask;window.cancelEdit=cancelEdit;window.deleteTask=deleteTask;
 window.updateSearch=updateSearch;window.toggleFilterProj=toggleFilterProj;window.toggleFilterPri=toggleFilterPri;
 window.exportData=exportData;window.downloadData=downloadData;window.importBackup=importBackup;
 
 function pDate(s){if(!s)return null;s=s.trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;var mo={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,january:1,february:2,march:3,april:4,june:6,july:7,august:8,september:9,october:10,november:11,december:12};var m1=s.match(/(\d{1,2})\s+([a-z]+)\s+(\d{4})/i);if(m1){var m=mo[m1[2].toLowerCase()];if(m)return m1[3]+"-"+String(m).padStart(2,"0")+"-"+String(m1[1]).padStart(2,"0");}var m2=s.match(/([a-z]+)\s+(\d{4})/i);if(m2){var mx=mo[m2[1].toLowerCase()];if(mx)return m2[2]+"-"+String(mx).padStart(2,"0")+"-01";}return null;}
-function pPri(s){if(!s)return"Medium";var u=s.trim().toLowerCase();if(u[0]==="u")return"Urgent";if(u[0]==="h")return"High";if(u[0]==="m")return"Medium";if(u[0]==="l")return"Low";return"Medium";}
+function pPri(s){if(!s)return"Normal";var u=s.trim().toLowerCase();if(u[0]==="u")return"Urgent";return"Normal";}
 function fzP(s){if(!s)return null;var u=s.trim().toLowerCase();return PROJ.find(function(p){return p.toLowerCase()===u;})||PROJ.find(function(p){return p.toLowerCase().includes(u);})||PROJ.find(function(p){return u.includes(p.toLowerCase().split(" ")[0]);})||null;}
 function pInp(){var ta=document.getElementById("imp-ta");if(!ta)return;var raw=ta.value.trim();if(!raw){ST.ip=[];ST.ir=[];ST.iRt=[];ST.iEp=[];ST.iCd=[];rIPrev();return;}
 var lines=raw.split("\n").map(function(l){return l.trim();}).filter(Boolean);var tasks=[];var errs=[];var rules=[];var routines=[];var epItems=[];var countdowns=[];
@@ -836,21 +906,25 @@ function rIPrev(){
   prev.innerHTML=h;
 }
 window.rIPrev=rIPrev;
-function sTask(){var t=(document.getElementById("af-t")||{}).value||"";if(!t.trim()){var el=document.getElementById("af-t");if(el){el.style.borderColor="#c0392b";el.focus();}return;}var pi=parseInt((document.getElementById("af-p")||{}).value||0);var task={id:"t"+Date.now(),project:PROJ[pi],title:t.trim(),priority:(document.getElementById("af-pr")||{}).value||"Medium",dueDate:(document.getElementById("af-d")||{}).value||null,notes:((document.getElementById("af-n")||{}).value||"").trim(),recurrence:(document.getElementById("af-rec")||{}).value||null,completed:false};ST.tasks.push(task);sl("tasks",ST.tasks);ST.add=false;nav(task.project);}
+function sTask(){var t=(document.getElementById("af-t")||{}).value||"";if(!t.trim()){var el=document.getElementById("af-t");if(el){el.style.borderColor="#c0392b";el.focus();}return;}var pi=parseInt((document.getElementById("af-p")||{}).value||0);var rawPri=(document.getElementById("af-pr")||{}).value||"Normal";var task={id:"t"+Date.now(),project:PROJ[pi],title:t.trim(),priority:rawPri==="Urgent"?"Urgent":"Normal",dueDate:(document.getElementById("af-d")||{}).value||null,notes:((document.getElementById("af-n")||{}).value||"").trim(),recurrence:(document.getElementById("af-rec")||{}).value||null,completed:false};ST.tasks.push(task);sl("tasks",ST.tasks);ST.add=false;nav(task.project);}
 window.sTask=sTask;
 function tcard(task,showP){
-  var st=ds(task.dueDate);var pc=PC[task.priority];var xp=ST.xp.has(task.id);
-  var pxc=PX[task.priority];var dnc=task.completed?"dn":"";
+  var st=ds(task.dueDate);var xp=ST.xp.has(task.id);
+  var pxc=task.priority==="Urgent"?"cu":"cm";
+  var dnc=task.completed?"dn":"";
   var proj=showP?'<div class="tp">'+e(task.project)+'</div>':"";
   var dueLbl=task.dueDate?'<span class="dl '+st+'">'+fd(task.dueDate)+'</span>':"";
   var arrowCls=xp?"ta op":"ta";
-  var arrow=task.notes?'<span class="'+arrowCls+'">\u25be</span>':"";
-  var notes=task.notes&&xp?'<div class="tn">'+e(task.notes)+'</div>':"";
+  var arrow='<span class="'+arrowCls+'">\u25be</span>';
+  var urgBadge=task.priority==="Urgent"?'<span class="pt u">Urgent</span>':"";
+  /* Postpone button for overdue tasks */
+  var postponeBtn=(st==="ov"&&!task.completed)?'<button class="ppn-btn" onclick="event.stopPropagation();postponeTask(\''+task.id+'\')">Postpone</button>':"";
+  var notes=xp?'<div class="tn">'+(task.notes?e(task.notes)+"<br>":"")+'<div class="tn-acts"><button class="tn-btn" onclick="editTask(\''+task.id+'\')">Edit</button><button class="tn-btn del" onclick="deleteTask(\''+task.id+'\')">Delete</button></div></div>':"";
   return '<div class="tcard">'+
     '<div class="trow" onclick="xpnd(\''+task.id+'\')">'+
       '<div class="tck '+pxc+' '+dnc+'" onclick="event.stopPropagation();tick(\''+task.id+'\')"></div>'+
       '<div class="tb"><div class="tt '+dnc+'">'+e(task.title)+'</div>'+proj+'</div>'+
-      '<div class="tr"><span class="pt '+pc+'">'+task.priority+'</span>'+dueLbl+arrow+'</div>'+
+      '<div class="tr">'+urgBadge+postponeBtn+dueLbl+arrow+'</div>'+
     '</div>'+notes+'</div>';
 }
 function aform(){
@@ -862,7 +936,7 @@ function aform(){
     '<div class="afg"><label class="afl">Title</label><input class="afi" id="af-t" placeholder="What needs to be done?" autocomplete="off" autocorrect="off"></div>'+
     '<div class="afr">'+
       '<div class="afg" style="margin:0"><label class="afl">Project</label><select class="afs" id="af-p">'+opts+'</select></div>'+
-      '<div class="afg" style="margin:0"><label class="afl">Priority</label><select class="afs" id="af-pr"><option>Urgent</option><option>High</option><option selected>Medium</option><option>Low</option></select></div>'+
+      '<div class="afg" style="margin:0"><label class="afl">Urgent?</label><select class="afs" id="af-pr"><option selected>Normal</option><option>Urgent</option></select></div>'+
     '</div>'+
     '<div class="afg" style="margin-top:12px"><label class="afl">Due date</label><input class="afi" type="date" id="af-d"></div>'+
     '<div class="afg"><label class="afl">Notes</label><textarea class="afta" id="af-n" placeholder="Any details..."></textarea></div>'+
@@ -881,7 +955,7 @@ function eform(){
     '<div class="afg"><label class="afl">Title</label><input class="afi" id="ef-t" value="'+e(task.title)+'" autocomplete="off" autocorrect="off"></div>'+
     '<div class="afr">'+
       '<div class="afg" style="margin:0"><label class="afl">Project</label><select class="afs" id="ef-p">'+opts+'</select></div>'+
-      '<div class="afg" style="margin:0"><label class="afl">Priority</label><select class="afs" id="ef-p"><option'+(task.priority==="Urgent"?' selected':'')+'>Urgent</option><option'+(task.priority==="High"?' selected':'')+'>High</option><option'+(task.priority==="Medium"?' selected':'')+'>Medium</option><option'+(task.priority==="Low"?' selected':'')+'>Low</option></select></div>'+
+      '<div class="afg" style="margin:0"><label class="afl">Urgent?</label><select class="afs" id="ef-p"><option'+(task.priority!=="Urgent"?' selected':'')+'>Normal</option><option'+(task.priority==="Urgent"?' selected':'')+'>Urgent</option></select></div>'+
     '</div>'+
     '<div class="afg" style="margin-top:12px"><label class="afl">Due date</label><input class="afi" type="date" id="ef-d" value="'+(task.dueDate||'')+'"></div>'+
     '<div class="afg"><label class="afl">Notes</label><textarea class="afta" id="ef-n" placeholder="Any details...">'+e(task.notes||'')+'</textarea></div>'+
@@ -893,11 +967,12 @@ function eform(){
 function vToday(){
   var t=ts();var d=new Date();
   var sub=DN[d.getDay()]+", "+d.getDate()+" "+MN[d.getMonth()]+" "+d.getFullYear();
-  var ov=ST.tasks.filter(function(x){return !x.completed&&x.dueDate&&x.dueDate<t;}).sort(function(a,b){return PO[a.priority]-PO[b.priority]||a.dueDate.localeCompare(b.dueDate);});
-  var td2=ST.tasks.filter(function(x){return !x.completed&&x.dueDate===t;}).sort(function(a,b){return PO[a.priority]-PO[b.priority];});
+  function urgSort(a,b){var ua=a.priority==="Urgent"?0:1;var ub=b.priority==="Urgent"?0:1;return ua-ub||a.dueDate.localeCompare(b.dueDate);}
+  var ov=ST.tasks.filter(function(x){return !x.completed&&x.dueDate&&x.dueDate<t;}).sort(urgSort);
+  var td2=ST.tasks.filter(function(x){return !x.completed&&x.dueDate===t;}).sort(urgSort);
   var sd=new Date();sd.setDate(sd.getDate()+7);
   var sw=sd.getFullYear()+"-"+("0"+(sd.getMonth()+1)).slice(-2)+"-"+("0"+sd.getDate()).slice(-2);
-  var wk=ST.tasks.filter(function(x){return !x.completed&&x.dueDate&&x.dueDate>t&&x.dueDate<=sw;}).sort(function(a,b){return PO[a.priority]-PO[b.priority]||a.dueDate.localeCompare(b.dueDate);});
+  var wk=ST.tasks.filter(function(x){return !x.completed&&x.dueDate&&x.dueDate>t&&x.dueDate<=sw;}).sort(urgSort);
   var thirtyAgo=new Date();thirtyAgo.setDate(thirtyAgo.getDate()-30);
   var thirtyStr=thirtyAgo.getFullYear()+"-"+("0"+(thirtyAgo.getMonth()+1)).slice(-2)+"-"+("0"+thirtyAgo.getDate()).slice(-2);
   var completed=ST.tasks.filter(function(x){return x.completed&&(!x.completedAt||x.completedAt>=thirtyStr);});
@@ -914,7 +989,7 @@ function vToday(){
   var briefHtml='<div class="brief-card"><div class="brief-greeting">'+greeting+'</div><div class="'+(ovFiltered.length+tdFiltered.length>0?"brief-summary":"brief-clear")+'">'+briefTxt+'</div></div>';
   
   var projOpts='<button class="flt-btn'+(ST.filterProj===null?" on":"")+'" onclick="toggleFilterProj(null)">All</button>'+PROJ.map(function(p){return '<button class="flt-btn'+(ST.filterProj===p?" on":"")+'" onclick="toggleFilterProj(\''+e(p)+'\')">'+e(p)+'</button>';}).join('');
-  var priOpts='<button class="flt-btn'+(ST.filterPri===null?" on":"")+'" onclick="toggleFilterPri(null)">All</button>'+PRI.map(function(p){return '<button class="flt-btn'+(ST.filterPri===p?" on":"")+'" onclick="toggleFilterPri(\''+e(p)+'\')">'+e(p)+'</button>';}).join('');
+  /* Priority filter removed - tasks are either Urgent or normal */
   
   var h='<div class="mnp">'+
     '<div class="pgt">Today</div>'+
@@ -926,7 +1001,6 @@ function vToday(){
     '<div class="srch-sec">'+
       '<input type="text" class="srch-inp" id="srch-inp" placeholder="Search tasks..." value="'+e(ST.search)+'" oninput="updateSearch(this.value)">'+
       '<div><label style="font-size:11px;color:#888882;font-weight:500">Projects:</label><div class="flt-grp">'+projOpts+'</div></div>'+
-      '<div><label style="font-size:11px;color:#888882;font-weight:500">Priority:</label><div class="flt-grp">'+priOpts+'</div></div>'+
     '</div>';
   
   if(ST.add)h+=aform();if(ST.editing)h+=eform();
@@ -972,56 +1046,90 @@ function vRem(){
   return '<div class="mnp"><div class="pgt">Credit score rules</div><div class="pgs">Tap any rule to edit</div>'+
     rows+'<button class="rla" onclick="aRule()"><span style="font-size:18px">+</span> Add rule</button></div>';
 }
-function vRoutine(){
-  var today=new Date();today.setHours(0,0,0,0);
-  var dow=today.getDay();var checks=ST.rt.checks||{};
-  var custom=ST.rt.custom||[];
-  var allItems=RD.concat(custom);
-  function isT(r){return r.days==="daily"||(Array.isArray(r.days)&&r.days.includes(dow));}
-  function isWkly(r){return Array.isArray(r.days)&&r.days.length<7;}
-  var ti=allItems.filter(isT);
-  var am=ti.filter(function(r){return r.time==="am"||r.time==="both";});
-  var ev=ti.filter(function(r){return r.time==="eve"||r.time==="both";});
-  var an=ti.filter(function(r){return r.time==="anytime";});
-  var ad=am.filter(function(r){return checks[r.id+"_am"];}).length;
-  var ed=ev.filter(function(r){return checks[r.id+"_eve"];}).length;
-  var nd=an.filter(function(r){return checks[r.id+"_any"];}).length;
-  var total=am.length+ev.length+an.length;
-  var done=ad+ed+nd;
+/* ── Helper: format minutes to HH:MM ── */
+function fmtTime(totalMins){
+  var h=Math.floor(totalMins/60)%24;
+  var m=totalMins%60;
+  return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+}
+function parseTime(s){var p=s.split(":");return parseInt(p[0])*60+parseInt(p[1]);}
+/* ── Build timed routine view (shared by morning & evening) ── */
+function vTimedRoutine(title,color,items,startTime,slot,customKey){
+  var checks=ST.rt.checks||{};
+  var customs=(ST.rt[customKey]||[]);
+  /* merge built-in + custom items by position */
+  var all=[];
+  items.forEach(function(it){all.push(it);});
+  customs.forEach(function(ci){all.splice(ci.pos<=all.length?ci.pos:all.length,0,ci);});
+  /* count totals */
+  var total=0;var done=0;
+  all.forEach(function(it){
+    total++;if(checks[it.id+"_"+slot])done++;
+    if(it.sub&&it.sub.length){it.sub.forEach(function(s,si){
+      var sid=it.id+"_s"+si;total++;if(checks[sid+"_"+slot])done++;
+    });}
+  });
   var pct=total?Math.round(done/total*100):0;
-  var sub=DN[dow]+", "+today.getDate()+" "+MN[today.getMonth()]+" - "+done+"/"+total+" done";
-  function ri(r,slot){
-    var k=r.id+"_"+slot;var dn=!!checks[k];
-    var wc=isWkly(r)?"rt-weekly ":"";
-    var dnc=dn?"dn":"";
-    var del=r.id.indexOf("rc")===0?'<button onclick="dRt(\''+r.id+'\')" style="font-size:16px;color:#888882;border:none;background:none;cursor:pointer;padding:0 4px;min-width:28px;opacity:.5">&#215;</button>':"";
-    return '<div class="rti '+wc+'">'+
-      '<div class="rtik '+dnc+'" onclick="tRt(\''+r.id+'\',\''+slot+'\')"></div>'+
-      '<span class="rtit2 '+dnc+'" onclick="tRt(\''+r.id+'\',\''+slot+'\')">'+e(r.title)+'</span>'+del+'</div>';
+  var today=new Date();
+  var sub=DN[today.getDay()]+", "+today.getDate()+" "+MN[today.getMonth()]+" - "+done+"/"+total+" done";
+  /* build timeline */
+  var curMin=parseTime(startTime);
+  var h='<div class="mnp"><div class="pgt">'+e(title)+'</div><div class="pgs">'+sub+'</div>'+
+    '<div class="pw"><div class="pb" style="width:'+pct+'%;background:'+color+'"></div></div>';
+  h+='<div style="margin-top:14px">';
+  all.forEach(function(it,idx){
+    var timeStr;
+    if(it.hard){timeStr=it.hard;curMin=parseTime(it.hard);}
+    else{timeStr=fmtTime(curMin);}
+    var k=it.id+"_"+slot;var dn=!!checks[k];var dnc=dn?"dn":"";
+    var isHard=!!it.hard;
+    var durLbl=it.dur>0?' <span class="rt-dur">('+it.dur+'m)</span>':"";
+    var hardLbl=isHard?'<span class="rt-hard-lbl">hard stop</span>':"";
+    var isCustom=it.id.indexOf("rc")===0;
+    var del=isCustom?'<button onclick="dRtC(\''+it.id+'\',\''+customKey+'\')" style="font-size:16px;color:#888882;border:none;background:none;cursor:pointer;padding:0 4px;min-width:28px;opacity:.5">&#215;</button>':"";
+    h+='<div class="rti'+(isHard?" hard-stop":"")+'">'+
+      '<span class="rt-time">'+timeStr+'</span>'+
+      '<div class="rtik '+dnc+'" onclick="tRt(\''+it.id+'\',\''+slot+'\')"></div>'+
+      '<span class="rtit2 '+dnc+'" onclick="tRt(\''+it.id+'\',\''+slot+'\')">'+e(it.title)+durLbl+'</span>'+hardLbl+del+'</div>';
+    /* sub-items */
+    if(it.sub&&it.sub.length){
+      h+='<div class="rt-sub">';
+      it.sub.forEach(function(s,si){
+        var sid=it.id+"_s"+si;
+        var sk=sid+"_"+slot;var sdn=!!checks[sk];var sdnc=sdn?"dn":"";
+        h+='<div class="rti">'+
+          '<div class="rtik '+sdnc+'" onclick="tRt(\''+sid+'\',\''+slot+'\')"></div>'+
+          '<span class="rtit2 '+sdnc+'" onclick="tRt(\''+sid+'\',\''+slot+'\')">'+e(typeof s==="string"?s:s.title)+'</span></div>';
+      });
+      h+='<button class="rtab rtab-sm" onclick="aRtSub(\''+it.id+'\',\''+slot+'\')"><span style="font-size:14px">+</span> Add sub-item</button>';
+      h+='</div>';
+    }
+    curMin+=it.dur||0;
+    /* add-between button */
+    h+='<button class="rtab" onclick="aRtAt(\''+customKey+'\','+idx+',\''+slot+'\')"><span style="font-size:14px">+</span> Add step here</button>';
+  });
+  /* anytime items for this slot */
+  var dow=today.getDay();
+  if(slot==="am"){
+    var anytime=RD_ANYTIME.filter(function(r){return r.days==="daily"||(Array.isArray(r.days)&&r.days.indexOf(dow)>=0);});
+    if(anytime.length){
+      h+='<div class="rt-anytime"><div class="rtch"><span class="rtct" style="color:#555550">Anytime today</span><span class="rtcn" style="margin-left:auto"></span></div>';
+      anytime.forEach(function(r){
+        var k2=r.id+"_any";var dn2=!!checks[k2];var dnc2=dn2?"dn":"";
+        h+='<div class="rti">'+
+          '<div class="rtik '+dnc2+'" onclick="tRt(\''+r.id+'\',\'any\')"></div>'+
+          '<span class="rtit2 '+dnc2+'" onclick="tRt(\''+r.id+'\',\'any\')">'+e(r.title)+'</span></div>';
+      });
+      h+='</div>';
+    }
   }
-  function gc(items,slot){
-    var cats={};items.forEach(function(r){if(!cats[r.cat])cats[r.cat]=[];cats[r.cat].push(r);});
-    return Object.keys(cats).map(function(cat){
-      return '<div class="rtca">'+cat+'</div>'+cats[cat].map(function(r){return ri(r,slot);}).join('');
-    }).join('');
-  }
-  function ab(slot){
-    return '<button class="rtab" onclick="aRt(\''+slot+'\')"><span style="font-size:16px">+</span> Add item</button>';
-  }
-  var amPct=am.length?Math.round(ad/am.length*100):0;
-  var evPct=ev.length?Math.round(ed/ev.length*100):0;
-  var h='<div class="mnp"><div class="pgt">Daily routine</div><div class="pgs">'+sub+'</div>'+
-    '<div class="pw"><div class="pb" style="width:'+pct+'%"></div></div>'+
-    '<div class="rtg">'+
-      '<div><div class="rtch"><span class="rtct am">Morning</span><div class="rtp"><div class="rtpb am" style="width:'+amPct+'%"></div></div><span class="rtcn">'+ad+'/'+am.length+'</span></div>'+gc(am,"am")+ab("am")+'</div>'+
-      '<div><div class="rtch"><span class="rtct eve">Evening</span><div class="rtp"><div class="rtpb eve" style="width:'+evPct+'%"></div></div><span class="rtcn">'+ed+'/'+ev.length+'</span></div>'+gc(ev,"eve")+ab("eve")+'</div>'+
-    '</div>';
-  if(an.length){
-    h+='<div style="margin-bottom:14px"><div class="rtch"><span class="rtct" style="color:#555550">Today only</span><span class="rtcn" style="margin-left:auto">'+nd+'/'+an.length+'</span></div>'+gc(an,"any")+ab("any")+'</div>';
-  }
-  h+='</div>';
+  h+='</div></div>';
   return h;
 }
+function vMorning(){return vTimedRoutine("Morning routine","#b45309",MR,MR_START,"am","customMR");}
+function vEvening(){return vTimedRoutine("Evening routine","#5b21b6",ER,ER_START,"eve","customER");}
+/* legacy compat */
+function vRoutine(){return vMorning();}
 /* ── Import view (was missing in v4.6) ── */
 function vImport(){
   var okHtml="";
@@ -1137,6 +1245,7 @@ function tickCountdowns(){
   });
 }
 var CHANGELOG=[
+  {v:"v5.5",date:"Mar 2026",size:"~120 KB",changes:["Morning & Evening routines split into separate timed views","Each step shows calculated start time and duration","Hard stops (e.g. 07:10 Shower, 07:45 Exit) highlighted in red","Sub-items shown indented under parent steps (e.g. shower steps)","Add step anywhere in the routine with + buttons","Anytime items shown at bottom of morning routine"],fixes:[]},
   {v:"v5.4",date:"Mar 2026",size:"113 KB",changes:["Claude auto-send - Claude can push items directly to LifeOS via Firebase inbox","Items from Claude appear automatically with a toast notification","No copy-paste needed - just tell Claude to add it","Forward view: text wrapping, black X markers, light blue today column","Daily routine: morning and evening stacked vertically"],fixes:[]},
   {v:"v5.3",date:"Mar 2026",size:"100 KB",changes:["Paste from Claude now supports all item types: tasks, credit rules, routine items, evening prep, and countdowns","New LIFEOS-ROUTINE, LIFEOS-EVENINGPREP, LIFEOS-COUNTDOWN block formats","Universal Claude Custom Instructions for generating paste blocks from any chat"],fixes:[]},
   {v:"v5.2",date:"Mar 2026",size:"95 KB",changes:["Input tab - unified hub to add tasks, routine items, evening prep, credit rules, countdowns, and paste from Claude","Input tab sits right below Today in sidebar with tabbed sections"],fixes:[]},
@@ -1518,7 +1627,8 @@ function rMn(){
   m.style.overflow="auto";
   if(ST.view==="today")m.innerHTML=vToday();
   else if(ST.view==="input")m.innerHTML=vInput();
-  else if(ST.view==="routine")m.innerHTML=vRoutine();
+  else if(ST.view==="routine"||ST.view==="morning")m.innerHTML=vMorning();
+  else if(ST.view==="evening_rt")m.innerHTML=vEvening();
   else if(ST.view==="import")m.innerHTML=vImport();
   else if(ST.view==="evening")m.innerHTML=vEp();
   else if(ST.view==="reminders")m.innerHTML=vRem();
@@ -1543,13 +1653,21 @@ function rSb(){
   var t=ts();var dow=new Date().getDay();var checks=ST.rt.checks||{};
   var todayCt=ST.tasks.filter(function(x){return !x.completed&&x.dueDate&&x.dueDate<=t;}).length;
   var epCt=ST.ep.items.filter(function(i){return !i.completed;}).length;
-  var allRt=RD.concat(ST.rt.custom||[]);
-  var todayR=allRt.filter(function(r){return r.days==="daily"||(Array.isArray(r.days)&&r.days.includes(dow));});
-  var rtLeft=todayR.filter(function(r){var slot=r.time==="am"||r.time==="both"?"am":r.time==="eve"?"eve":"any";return !checks[r.id+"_"+slot];}).length;
+  /* Count morning routine remaining */
+  var rtLeftAM=0;
+  MR.forEach(function(it){if(!checks[it.id+"_am"])rtLeftAM++;if(it.sub){it.sub.forEach(function(s,si){if(!checks[it.id+"_s"+si+"_am"])rtLeftAM++;});}});
+  (ST.rt.customMR||[]).forEach(function(it){if(!checks[it.id+"_am"])rtLeftAM++;});
+  /* Count evening routine remaining */
+  var rtLeftEV=0;
+  ER.forEach(function(it){if(!checks[it.id+"_eve"])rtLeftEV++;if(it.sub){it.sub.forEach(function(s,si){if(!checks[it.id+"_s"+si+"_eve"])rtLeftEV++;});}});
+  (ST.rt.customER||[]).forEach(function(it){if(!checks[it.id+"_eve"])rtLeftEV++;});
+  /* Count anytime items */
+  RD_ANYTIME.filter(function(r){return r.days==="daily"||(Array.isArray(r.days)&&r.days.indexOf(dow)>=0);}).forEach(function(r){if(!checks[r.id+"_any"])rtLeftAM++;});
   var views=[
     {v:"today",l:"Today",c:todayCt},
     {v:"input",l:"Input",c:0},
-    {v:"routine",l:"Daily routine",c:rtLeft},
+    {v:"morning",l:"Morning routine",c:rtLeftAM},
+    {v:"evening_rt",l:"Evening routine",c:rtLeftEV},
     {v:"evening",l:"Evening prep",c:epCt},
     {v:"reminders",l:"Credit score rules",c:0},
     {v:"import",l:"Import from Claude",c:0,g:true},
@@ -1576,8 +1694,8 @@ function rSb(){
     '<div class="sb-foot">'+(fbRef?'<div id="sync-ind-sb" class="sync-ind"></div>':'')+
     '<button class="add-btn" onclick="oAdd()">+ New task</button></div>';
 }
-function init(){var tasks=gl("tasks");var rem=gl("rem");var ep=gl("ep");var rt=gl("rt");ST.tasks=tasks||DT.map(function(t){var o={};for(var k in t)o[k]=t[k];return o;});ST.rem=rem||DR.map(function(r){var o={};for(var k in r)o[k]=r[k];return o;});var td=ts();if(!ep||ep.lr!==td)ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};else ST.ep=ep;if(!rt||rt.lr!==td)ST.rt={checks:{},custom:(rt&&rt.custom)||[],lr:td};else ST.rt=rt;if(!tasks)sl("tasks",ST.tasks);if(!rem)sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);autoSnap();rSb();rMn();}
-function schedMidnight(){var now=new Date();var mid=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);setTimeout(function(){var td=ts();ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};ST.rt={checks:{},custom:ST.rt.custom||[],lr:td};sl("ep",ST.ep);sl("rt",ST.rt);rSb();rMn();schedMidnight();},mid-now);}
+function init(){var tasks=gl("tasks");var rem=gl("rem");var ep=gl("ep");var rt=gl("rt");ST.tasks=tasks||DT.map(function(t){var o={};for(var k in t)o[k]=t[k];return o;});ST.rem=rem||DR.map(function(r){var o={};for(var k in r)o[k]=r[k];return o;});var td=ts();if(!ep||ep.lr!==td)ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};else ST.ep=ep;if(!rt||rt.lr!==td)ST.rt={checks:{},custom:(rt&&rt.custom)||[],customMR:(rt&&rt.customMR)||[],customER:(rt&&rt.customER)||[],lr:td};else{ST.rt=rt;if(!ST.rt.customMR)ST.rt.customMR=[];if(!ST.rt.customER)ST.rt.customER=[];}if(!tasks)sl("tasks",ST.tasks);if(!rem)sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);autoSnap();rSb();rMn();}
+function schedMidnight(){var now=new Date();var mid=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);setTimeout(function(){var td=ts();ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};ST.rt={checks:{},custom:ST.rt.custom||[],customMR:ST.rt.customMR||[],customER:ST.rt.customER||[],lr:td};sl("ep",ST.ep);sl("rt",ST.rt);rSb();rMn();schedMidnight();},mid-now);}
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(ST.add)cAdd();else closeSb();}});
 /* PIN input: submit on Enter key */
 var pinInp=document.getElementById("pin-inp");
