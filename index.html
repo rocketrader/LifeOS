@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   LifeOS - Personal Task Manager
-  Version: v5.1 (cloud sync)
+  Version: v5.2 (cloud sync)
 
   ARCHITECTURE:
   - Single HTML file, all CSS and JS inline
@@ -45,7 +45,7 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Life OS v5.1</title>
+<title>Life OS v5.2</title>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
@@ -384,6 +384,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tcx-delb{padding:6px 10px;font-size:11px;border:1px solid #f5c6c2;background:#fdf0ee;border-radius:4px;cursor:pointer;color:#c0392b;font-family:inherit;white-space:nowrap;min-height:32px}
 .tcx-delb:active{opacity:.85}
 .rec-icon{display:inline-block;color:#888882;font-size:11px;margin-left:4px}
+/* Input tab */
+.inp-tabs{display:flex;gap:0;border-bottom:1px solid #e0ddd8;margin-bottom:18px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.inp-tab{padding:10px 14px;font-size:13px;color:#888882;cursor:pointer;border:none;background:none;font-family:inherit;white-space:nowrap;border-bottom:2px solid transparent;min-height:44px}
+.inp-tab:active{background:#f0eeeb}
+.inp-tab.on{color:#1a1a18;border-bottom-color:#1d4ed8;font-weight:500}
+.inp-form{background:#ffffff;border:1px solid #e0ddd8;border-radius:12px;padding:18px;margin-bottom:14px}
+.inp-ok{font-size:14px;color:#15803d;padding:14px;background:#f0fdf4;border-radius:8px;font-weight:500;text-align:center;border:1px solid #bbf7d0;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -399,7 +406,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </div>
 <div id="topbar">
   <button class="tb-ham" onclick="toggleSb()"><span></span><span></span><span></span></button>
-  <span class="tb-logo">Life OS <span class="tb-ver">v5.1</span></span>
+  <span class="tb-logo">Life OS <span class="tb-ver">v5.2</span></span>
   <div id="sync-ind-mob" class="sync-ind" style="display:none"></div>
   <button class="tb-imp" onclick="nav('import')">&#8595; Import</button>
 </div>
@@ -408,7 +415,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="app"><aside id="sb"></aside><main id="mn"></main></div>
 <script>
 var cdInterval=null;
-var V="v5.1";
+var V="v5.2";
 /* ── Cloud Sync (Firebase) ── */
 var FBCFG={
   apiKey:"AIzaSyCuhIldfs8yjJKhzoV_ENff5pTXoegXh2I",
@@ -601,7 +608,7 @@ var DE=[
   {id:"ep7",title:"Set alarm"},
   {id:"ep8",title:"Lock up / security check"},
 ];
-var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null};
+var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null,inpTab:"task",inpOk:""};
 function gl(k){try{return JSON.parse(localStorage.getItem("los_"+k));}catch(ex){return null;}}
 function sl(k,v){try{localStorage.setItem("los_"+k,JSON.stringify(v));}catch(ex){}queueSync();}
 function ts(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -1016,6 +1023,7 @@ function tickCountdowns(){
   });
 }
 var CHANGELOG=[
+  {v:"v5.2",date:"Mar 2026",changes:["Input tab - unified hub to add tasks, routine items, evening prep, credit rules, countdowns, and paste from Claude","Input tab sits right below Today in sidebar with tabbed sections"],fixes:[]},
   {v:"v5.1",date:"Mar 2026",changes:["Task editing & deletion","Recurring/repeating tasks","Search & filter on Today view","JSON data backup export & import","Daily briefing at top of Today view"],fixes:[]},
   {v:"v5.0",date:"Mar 2026",changes:["Cloud sync via Firebase - data saved online and accessible from any device","PIN-based login - set a 4-6 digit PIN to protect your data","Offline support - app works without internet and syncs when back online","Real-time sync - changes on one device appear on others automatically","Sync status indicator in sidebar and mobile topbar"],fixes:[]},
   {v:"v4.7",date:"Mar 2026",changes:["Restored 8 missing functions that were lost in v4.5-4.6 rebuilds","All tabs now working again"],fixes:["cdInterval undeclared - caused ReferenceError on every nav click","vImport function missing - Import tab crashed","loadCd/saveCd/calcCountdown/cdUnit missing - Countdown tab crashed","addCdEvent/editCdEvent/deleteCdEvent missing","Forward view inline onscroll replaced with addEventListener for iOS Safari"]},
@@ -1226,11 +1234,141 @@ function vForward(){
       '</div>'+
     '</div>';
 }
+/* ── Input tab ── */
+function setInpTab(tab){ST.inpTab=tab;ST.inpOk="";rMn();}
+window.setInpTab=setInpTab;
+function inpAddTask(){
+  var t=(document.getElementById("inp-t-title")||{}).value||"";
+  if(!t.trim())return;
+  var pi=parseInt((document.getElementById("inp-t-proj")||{}).value||0);
+  var task={id:"t"+Date.now(),project:PROJ[pi],title:t.trim(),priority:(document.getElementById("inp-t-pri")||{}).value||"Medium",dueDate:(document.getElementById("inp-t-date")||{}).value||null,notes:((document.getElementById("inp-t-notes")||{}).value||"").trim(),recurrence:(document.getElementById("inp-t-rec")||{}).value||"",completed:false};
+  ST.tasks.push(task);sl("tasks",ST.tasks);ST.inpOk="Task added: "+t.trim();rSb();rMn();
+}
+window.inpAddTask=inpAddTask;
+function inpAddRoutine(){
+  var t=(document.getElementById("inp-r-title")||{}).value||"";
+  if(!t.trim())return;
+  var slot=(document.getElementById("inp-r-slot")||{}).value||"am";
+  var cat=(document.getElementById("inp-r-cat")||{}).value||"Custom";
+  var days=(document.getElementById("inp-r-days")||{}).value||"daily";
+  var dVal=days==="daily"?"daily":days==="weekdays"?[1,2,3,4,5]:days==="weekends"?[0,6]:[parseInt(days)];
+  var c=ST.rt.custom||[];
+  c.push({id:"rc"+Date.now(),cat:cat,title:t.trim(),time:slot,days:dVal});
+  ST.rt.custom=c;sl("rt",ST.rt);ST.inpOk="Routine item added: "+t.trim();rSb();rMn();
+}
+window.inpAddRoutine=inpAddRoutine;
+function inpAddEp(){
+  var t=(document.getElementById("inp-ep-title")||{}).value||"";
+  if(!t.trim())return;
+  ST.ep.items.push({id:"ep"+Date.now(),title:t.trim(),completed:false});
+  sl("ep",ST.ep);ST.inpOk="Evening prep item added: "+t.trim();rSb();rMn();
+}
+window.inpAddEp=inpAddEp;
+function inpAddRule(){
+  var t=(document.getElementById("inp-rl-title")||{}).value||"";
+  if(!t.trim())return;
+  ST.rem.push({id:"r"+Date.now(),title:t.trim(),active:true});
+  sl("rem",ST.rem);ST.inpOk="Credit rule added: "+t.trim();rSb();rMn();
+}
+window.inpAddRule=inpAddRule;
+function inpAddCd(){
+  var n=(document.getElementById("inp-cd-name")||{}).value||"";
+  var dt=(document.getElementById("inp-cd-date")||{}).value||"";
+  if(!n.trim()||!dt)return;
+  var events=loadCd();
+  events.push({id:"cd"+Date.now(),name:n.trim(),target:dt});
+  saveCd(events);ST.inpOk="Countdown added: "+n.trim();rMn();
+}
+window.inpAddCd=inpAddCd;
+function inpPaste(){
+  var ta=document.getElementById("inp-paste-ta");if(!ta)return;
+  var raw=ta.value.trim();if(!raw){ST.ip=[];ST.ir=[];rIPrev();return;}
+  var lines=raw.split("\n").map(function(l){return l.trim();}).filter(Boolean);
+  var tasks=[];var errs=[];var rules=[];
+  var rs=lines.findIndex(function(l){return /^LIFEOS-RULES/i.test(l);});
+  var ts2=lines.findIndex(function(l){return /^LIFEOS(?!-RULES)/i.test(l);});
+  var tLines=(ts2>=0?lines.slice(ts2+1,rs>ts2&&rs>=0?rs:undefined):(rs<0?lines:[])).filter(function(l){return l.startsWith("-");});
+  tLines.forEach(function(line,i){
+    var c=line.replace(/^-\s*/,"");var pts=c.split("|").map(function(p){return p.trim();});
+    if(!pts[0])return;var proj=pts[1]?fzP(pts[1]):null;
+    tasks.push({title:pts[0],project:proj,priority:pPri(pts[2]),dueDate:pDate(pts[3]),notes:pts[4]||"",ok:!!proj,_i:i,_p:proj||PROJ[0]});
+    if(!proj&&pts[1])errs.push(pts[1]+" not recognised");
+  });
+  if(rs>=0){lines.slice(rs+1).filter(function(l){return l.startsWith("-");}).forEach(function(l){var t=l.replace(/^-\s*/,"").trim();if(t)rules.push(t);});}
+  ST.ip=tasks;ST.ir=rules;ST.ie=errs;rIPrev();
+}
+window.inpPaste=inpPaste;
+function vInput(){
+  var tabs=[
+    {id:"task",l:"Task"},{id:"routine",l:"Routine"},{id:"evening",l:"Evening Prep"},
+    {id:"rule",l:"Credit Rule"},{id:"countdown",l:"Countdown"},{id:"paste",l:"Paste from Claude"}
+  ];
+  var tabHtml='<div class="inp-tabs">';
+  tabs.forEach(function(t){
+    var cls=ST.inpTab===t.id?"inp-tab on":"inp-tab";
+    tabHtml+='<button class="'+cls+'" onclick="setInpTab(\''+t.id+'\')">'+t.l+'</button>';
+  });
+  tabHtml+='</div>';
+  var okHtml=ST.inpOk?'<div class="inp-ok">'+e(ST.inpOk)+'</div>':"";
+  var body="";
+  if(ST.inpTab==="task"){
+    var projOpts=PROJ.map(function(p,i){return '<option value="'+i+'">'+e(p)+'</option>';}).join('');
+    body='<div class="inp-form"><div class="aft">Add a task</div>'+
+      '<div class="afg"><label class="afl">Title</label><input class="afi" id="inp-t-title" placeholder="What needs doing?" autocomplete="off"></div>'+
+      '<div class="afr">'+
+        '<div class="afg" style="margin:0"><label class="afl">Project</label><select class="afs" id="inp-t-proj">'+projOpts+'</select></div>'+
+        '<div class="afg" style="margin:0"><label class="afl">Priority</label><select class="afs" id="inp-t-pri"><option>Urgent</option><option>High</option><option selected>Medium</option><option>Low</option></select></div>'+
+      '</div>'+
+      '<div class="afr" style="margin-top:12px">'+
+        '<div class="afg" style="margin:0"><label class="afl">Due date</label><input class="afi" type="date" id="inp-t-date"></div>'+
+        '<div class="afg" style="margin:0"><label class="afl">Recurrence</label><select class="afs" id="inp-t-rec"><option value="">None</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>'+
+      '</div>'+
+      '<div class="afg"><label class="afl">Notes</label><textarea class="afta" id="inp-t-notes" placeholder="Any details..."></textarea></div>'+
+      '<div class="afa"><button class="btn pri" onclick="inpAddTask()">Add task</button></div>'+
+    '</div>';
+  } else if(ST.inpTab==="routine"){
+    body='<div class="inp-form"><div class="aft">Add a routine item</div>'+
+      '<div class="afg"><label class="afl">Title</label><input class="afi" id="inp-r-title" placeholder="e.g. Take vitamins" autocomplete="off"></div>'+
+      '<div class="afr">'+
+        '<div class="afg" style="margin:0"><label class="afl">Time slot</label><select class="afs" id="inp-r-slot"><option value="am">Morning</option><option value="eve">Evening</option><option value="both">Both AM &amp; PM</option><option value="anytime">Anytime / Today only</option></select></div>'+
+        '<div class="afg" style="margin:0"><label class="afl">Category</label><select class="afs" id="inp-r-cat"><option>Health &amp; Wellbeing</option><option>Sleep</option><option>Deeper</option><option>Maintenance</option><option>Custom</option></select></div>'+
+      '</div>'+
+      '<div class="afg" style="margin-top:12px"><label class="afl">Days</label><select class="afs" id="inp-r-days"><option value="daily">Every day</option><option value="weekdays">Weekdays only</option><option value="weekends">Weekends only</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></div>'+
+      '<div class="afa"><button class="btn pri" onclick="inpAddRoutine()">Add routine item</button></div>'+
+    '</div>';
+  } else if(ST.inpTab==="evening"){
+    body='<div class="inp-form"><div class="aft">Add an evening prep item</div>'+
+      '<div class="afg"><label class="afl">Title</label><input class="afi" id="inp-ep-title" placeholder="e.g. Prep gym bag" autocomplete="off"></div>'+
+      '<div class="afa"><button class="btn pri" onclick="inpAddEp()">Add item</button></div>'+
+    '</div>';
+  } else if(ST.inpTab==="rule"){
+    body='<div class="inp-form"><div class="aft">Add a credit score rule</div>'+
+      '<div class="afg"><label class="afl">Rule</label><input class="afi" id="inp-rl-title" placeholder="e.g. Pay HSBC on time every month" autocomplete="off"></div>'+
+      '<div class="afa"><button class="btn pri" onclick="inpAddRule()">Add rule</button></div>'+
+    '</div>';
+  } else if(ST.inpTab==="countdown"){
+    body='<div class="inp-form"><div class="aft">Add a countdown</div>'+
+      '<div class="afg"><label class="afl">Event name</label><input class="afi" id="inp-cd-name" placeholder="e.g. Holiday to Argentina" autocomplete="off"></div>'+
+      '<div class="afg"><label class="afl">Date &amp; time</label><input class="afi" type="datetime-local" id="inp-cd-date"></div>'+
+      '<div class="afa"><button class="btn pri" onclick="inpAddCd()">Add countdown</button></div>'+
+    '</div>';
+  } else if(ST.inpTab==="paste"){
+    body='<div class="inp-form"><div class="aft">Paste from Claude</div>'+
+      '<div class="pgs" style="margin-bottom:12px">Paste a LIFEOS block to import tasks and rules</div>'+
+      '<div class="ic">LIFEOS\n- Task title | Project | Priority | Due date | Notes\n\nLIFEOS-RULES\n- Rule text here</div>'+
+      '<textarea class="ita" id="inp-paste-ta" placeholder="Paste LIFEOS block here..." oninput="inpPaste()"></textarea>'+
+      '<div id="iprev" style="margin-top:14px"></div>'+
+    '</div>';
+  }
+  return '<div class="mnp"><div class="pgt">Input</div><div class="pgs">Add items to any part of Life OS</div>'+
+    tabHtml+okHtml+body+'</div>';
+}
 function rMn(){
   var m=document.getElementById("mn");
   if(!m)return;
   m.style.overflow="auto";
   if(ST.view==="today")m.innerHTML=vToday();
+  else if(ST.view==="input")m.innerHTML=vInput();
   else if(ST.view==="routine")m.innerHTML=vRoutine();
   else if(ST.view==="import")m.innerHTML=vImport();
   else if(ST.view==="evening")m.innerHTML=vEp();
@@ -1261,6 +1399,7 @@ function rSb(){
   var rtLeft=todayR.filter(function(r){var slot=r.time==="am"||r.time==="both"?"am":r.time==="eve"?"eve":"any";return !checks[r.id+"_"+slot];}).length;
   var views=[
     {v:"today",l:"Today",c:todayCt},
+    {v:"input",l:"+ Input",c:0},
     {v:"routine",l:"Daily routine",c:rtLeft},
     {v:"evening",l:"Evening prep",c:epCt},
     {v:"reminders",l:"Credit score rules",c:0},
