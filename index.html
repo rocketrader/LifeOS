@@ -93,20 +93,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .smb{font-size:12px;color:#888882;cursor:pointer;border:none;background:none;font-family:inherit;padding:4px 0;min-height:44px;display:inline-flex;align-items:center}
 .tlist{display:flex;flex-direction:column;gap:6px}
 .tcard{background:#ffffff;border-radius:8px;border:1px solid #e0ddd8;overflow:hidden}
-.trow{display:flex;align-items:center;padding:14px 16px;gap:12px;cursor:pointer;min-height:52px}
-.tck{width:22px;height:22px;border-radius:50%;border:2.5px solid currentColor;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;font-weight:700}
+.trow{display:flex;align-items:flex-start;padding:14px 16px;gap:10px;cursor:pointer;min-height:52px;flex-wrap:wrap}
+.tck{width:22px;height:22px;border-radius:50%;border:2.5px solid currentColor;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;font-weight:700;margin-top:1px}
 .tck.dn{background:currentColor}.tck.dn::after{content:"\2713";color:#fff}
 .cu{color:#c0392b}.ch{color:#b45309}.cm{color:#1d4ed8}.cl{color:#15803d}
+.urg-dot{width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
 .tb{flex:1;min-width:0}
-.tt{font-size:14px;color:#1a1a18;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt{font-size:14px;color:#1a1a18;line-height:1.4}
 .tt.dn{text-decoration:line-through;color:#888882}
 .tp{font-size:12px;color:#888882;margin-top:2px}
-.tr{display:flex;align-items:center;gap:7px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
-.pt{font-size:11px;padding:3px 8px;border-radius:8px;font-weight:500;white-space:nowrap}
-.pt.u{background:#fdf0ee;color:#c0392b;border:1px solid #f5c6c2}
-.pt.h{background:#fffbeb;color:#b45309;border:1px solid #fcd34d}
-.pt.m{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
-.pt.l{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+.tr{display:flex;align-items:center;gap:7px;flex-shrink:0;justify-content:flex-end}
+.t-meta{display:flex;align-items:center;justify-content:space-between;width:100%;padding-left:34px;margin-top:2px}
+.t-meta.with-urg{padding-left:64px}
 .dl{font-size:12px;font-weight:500;white-space:nowrap}
 .dl.ov{color:#c0392b}.dl.td{color:#b45309}.dl.sn{color:#b45309}.dl.ft{color:#888882}
 .ta{font-size:13px;color:#888882;display:inline-block;transition:transform .2s}
@@ -115,7 +113,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tn-acts{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #e0ddd8}
 .tn-btn{padding:6px 14px;border:1px solid #e0ddd8;background:#ffffff;border-radius:6px;font-size:12px;cursor:pointer;color:#555550;font-family:inherit}
 .tn-btn.del{color:#c0392b;border-color:#f5c6c2}
-.ppn-btn{padding:4px 10px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:6px;font-size:11px;cursor:pointer;color:#1d4ed8;font-family:inherit;font-weight:500;white-space:nowrap}
+.ppn-btn{padding:4px 10px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:6px;font-size:11px;cursor:pointer;color:#1d4ed8;font-family:inherit;font-weight:500;white-space:nowrap;margin-left:auto}
 .sl{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#888882;margin:20px 0 10px}
 .sl:first-child{margin-top:0}
 .sl.ov{color:#c0392b}.sl.td{color:#b45309}.sl.sn{color:#1d4ed8}
@@ -921,19 +919,25 @@ function tcard(task,showP){
   var st=ds(task.dueDate);var xp=ST.xp.has(task.id);
   var pxc=task.priority==="Urgent"?"cu":"cm";
   var dnc=task.completed?"dn":"";
-  var proj=showP?'<div class="tp">'+e(task.project)+'</div>':"";
+  var isUrg=task.priority==="Urgent";
+  var urgDot=isUrg?'<div class="urg-dot" title="Urgent">!</div>':"";
+  var proj=showP?'<span class="tp">'+e(task.project)+'</span>':"";
   var dueLbl=task.dueDate?'<span class="dl '+st+'">'+fd(task.dueDate)+'</span>':"";
   var arrowCls=xp?"ta op":"ta";
   var arrow='<span class="'+arrowCls+'">\u25be</span>';
-  var urgBadge=task.priority==="Urgent"?'<span class="pt u">Urgent</span>':"";
-  /* Postpone button for overdue tasks */
   var postponeBtn=(st==="ov"&&!task.completed)?'<button class="ppn-btn" onclick="event.stopPropagation();postponeTask(\''+task.id+'\')">Postpone</button>':"";
   var notes=xp?'<div class="tn">'+(task.notes?e(task.notes)+"<br>":"")+'<div class="tn-acts"><button class="tn-btn" onclick="editTask(\''+task.id+'\')">Edit</button><button class="tn-btn del" onclick="deleteTask(\''+task.id+'\')">Delete</button></div></div>':"";
+  /* Row 1: urgent dot + checkbox + title + arrow */
+  /* Row 2: project + date + postpone */
+  var metaCls=isUrg?"t-meta with-urg":"t-meta";
+  var metaRow=(proj||dueLbl||postponeBtn)?'<div class="'+metaCls+'">'+proj+'<div class="tr">'+postponeBtn+dueLbl+arrow+'</div></div>':"";
   return '<div class="tcard">'+
     '<div class="trow" onclick="xpnd(\''+task.id+'\')">'+
+      urgDot+
       '<div class="tck '+pxc+' '+dnc+'" onclick="event.stopPropagation();tick(\''+task.id+'\')"></div>'+
-      '<div class="tb"><div class="tt '+dnc+'">'+e(task.title)+'</div>'+proj+'</div>'+
-      '<div class="tr">'+urgBadge+postponeBtn+dueLbl+arrow+'</div>'+
+      '<div class="tb"><div class="tt '+dnc+'">'+e(task.title)+'</div></div>'+
+      ((!proj&&!dueLbl)?arrow:"")+
+      metaRow+
     '</div>'+notes+'</div>';
 }
 function aform(){
