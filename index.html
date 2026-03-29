@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   LifeOS - Personal Task Manager
-  Version: v5.8 (sub-item arrows + swipe-to-delete)
+  Version: v5.9 (scroll pickers for all date/time inputs)
 
   ARCHITECTURE:
   - Single HTML file, all CSS and JS inline
@@ -45,7 +45,7 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Life OS v5.8</title>
+<title>Life OS v5.9</title>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
@@ -453,6 +453,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .inp-tab.on{color:#1a1a18;border-bottom-color:#1d4ed8;font-weight:500}
 .inp-form{background:#ffffff;border:1px solid #e0ddd8;border-radius:12px;padding:18px;margin-bottom:14px}
 .inp-ok{font-size:14px;color:#15803d;padding:14px;background:#f0fdf4;border-radius:8px;font-weight:500;text-align:center;border:1px solid #bbf7d0;margin-bottom:14px}
+/* ── Scroll picker (drum roller) ── */
+.spk-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:9999;display:flex;align-items:flex-end;justify-content:center}
+.spk-sheet{background:#fff;width:100%;max-width:420px;border-radius:16px 16px 0 0;padding:0 0 env(safe-area-inset-bottom,0px);overflow:hidden}
+.spk-hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e0ddd8}
+.spk-hdr button{font-size:15px;font-family:inherit;border:none;background:none;cursor:pointer;padding:6px 10px;min-height:44px;min-width:44px}
+.spk-cancel{color:#888882}
+.spk-done{color:#1d4ed8;font-weight:600}
+.spk-title{font-size:14px;font-weight:600;color:#1a1a18}
+.spk-body{display:flex;height:200px;position:relative;overflow:hidden}
+.spk-body::before,.spk-body::after{content:"";position:absolute;left:0;right:0;height:80px;pointer-events:none;z-index:2}
+.spk-body::before{top:0;background:linear-gradient(to bottom,rgba(255,255,255,.85),rgba(255,255,255,0))}
+.spk-body::after{bottom:0;background:linear-gradient(to top,rgba(255,255,255,.85),rgba(255,255,255,0))}
+.spk-sel{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:40px;border-top:1.5px solid #e0ddd8;border-bottom:1.5px solid #e0ddd8;pointer-events:none;z-index:1}
+.spk-col{flex:1;overflow:hidden;position:relative;-webkit-overflow-scrolling:touch}
+.spk-col-inner{padding:80px 0}
+.spk-item{height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#1a1a18;user-select:none;-webkit-user-select:none}
+.spk-col-lbl{position:absolute;bottom:4px;left:0;right:0;text-align:center;font-size:10px;color:#888882;letter-spacing:.5px;text-transform:uppercase;z-index:3}
 </style>
 </head>
 <body>
@@ -477,7 +494,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="app"><aside id="sb"></aside><main id="mn"></main></div>
 <script>
 var cdInterval=null;
-var V="v5.8";
+var V="v5.9";
 /* ── Cloud Sync (Firebase) ── */
 var FBCFG={
   apiKey:"AIzaSyCuhIldfs8yjJKhzoV_ENff5pTXoegXh2I",
@@ -819,20 +836,13 @@ function addRtTop(customKey,slot){
 }
 function editRtTime(el,id){
   var cur=el.textContent.trim();
-  var inp=document.createElement("input");
-  inp.type="text";inp.value=cur;inp.className="rt-time-inp";
-  inp.setAttribute("maxlength","5");inp.setAttribute("placeholder","HH:MM");
-  el.parentNode.replaceChild(inp,el);inp.focus();inp.select();
-  function save(){
-    var v=inp.value.trim();
+  openTimePicker(cur,function(v){
     if(v&&v.match(/^\d{1,2}:\d{2}$/)){
       if(!ST.rt.timeOverrides)ST.rt.timeOverrides={};
       ST.rt.timeOverrides[id]=v;sl("rt",ST.rt);
     }
     rMn();
-  }
-  inp.addEventListener("blur",save);
-  inp.addEventListener("keydown",function(ev){if(ev.key==="Enter")inp.blur();});
+  });
 }
 function clearRtHard(id){
   if(ST.rt.timeOverrides)delete ST.rt.timeOverrides[id];
@@ -980,20 +990,9 @@ try{var data=JSON.parse(ta.value);if(!data.tasks||!Array.isArray(data.tasks)){al
 ST.tasks=data.tasks||[];ST.rem=data.rem||[];ST.ep=data.ep||{items:[],lr:""};ST.rt=data.rt||{checks:{},custom:[],customMR:[],customER:[],lr:""};if(!ST.rt.customMR)ST.rt.customMR=[];if(!ST.rt.customER)ST.rt.customER=[];ST.cd=data.cd||[];sl("tasks",ST.tasks);sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);sl("cd",ST.cd);alert("Data restored!");rSb();rMn();}catch(ex){alert("Invalid JSON: "+ex.message);}}
 function postponeTask(id){
   var t=ST.tasks.find(function(x){return x.id===id;});if(!t)return;
-  /* Create a hidden date input and open the native calendar picker */
-  var old=document.getElementById("ppn-picker");if(old)old.remove();
-  var inp=document.createElement("input");
-  inp.type="date";inp.id="ppn-picker";
-  inp.style.cssText="position:fixed;top:-9999px;left:-9999px;opacity:0;";
-  if(t.dueDate)inp.value=t.dueDate;
-  inp.addEventListener("change",function(){
-    if(inp.value){t.dueDate=inp.value;sl("tasks",ST.tasks);rSb();rMn();}
-    inp.remove();
+  openDatePicker(t.dueDate||"",function(v){
+    if(v){t.dueDate=v;sl("tasks",ST.tasks);rSb();rMn();}
   });
-  /* Remove if user cancels (blur without change) */
-  inp.addEventListener("blur",function(){setTimeout(function(){var el=document.getElementById("ppn-picker");if(el)el.remove();},300);});
-  document.body.appendChild(inp);
-  inp.focus();inp.click();
 }
 window.postponeTask=postponeTask;
 window.editTask=editTask;window.saveEditTask=saveEditTask;window.cancelEdit=cancelEdit;window.deleteTask=deleteTask;
@@ -1149,7 +1148,7 @@ function aform(){
       '<div class="afg" style="margin:0"><label class="afl">Project</label><select class="afs" id="af-p">'+opts+'</select></div>'+
       '<div class="afg" style="margin:0"><label class="afl">Urgent?</label><select class="afs" id="af-pr"><option selected>Normal</option><option>Urgent</option></select></div>'+
     '</div>'+
-    '<div class="afg" style="margin-top:12px"><label class="afl">Due date</label><input class="afi" type="date" id="af-d"></div>'+
+    '<div class="afg" style="margin-top:12px"><label class="afl">Due date</label><input class="afi" id="af-d" readonly placeholder="Tap to select" onclick="openDatePicker(this.value,function(v){document.getElementById(\'af-d\').value=v;})"></div>'+
     '<div class="afg"><label class="afl">Notes</label><textarea class="afta" id="af-n" placeholder="Any details..."></textarea></div>'+
     '<div class="afg"><label class="afl">Recurrence</label><select class="afs" id="af-rec"><option value="">None</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>'+
     '<div class="afa"><button class="btn" onclick="cAdd()">Cancel</button><button class="btn pri" onclick="sTask()">Add task</button></div>'+
@@ -1168,7 +1167,7 @@ function eform(){
       '<div class="afg" style="margin:0"><label class="afl">Project</label><select class="afs" id="ef-p">'+opts+'</select></div>'+
       '<div class="afg" style="margin:0"><label class="afl">Urgent?</label><select class="afs" id="ef-p"><option'+(task.priority!=="Urgent"?' selected':'')+'>Normal</option><option'+(task.priority==="Urgent"?' selected':'')+'>Urgent</option></select></div>'+
     '</div>'+
-    '<div class="afg" style="margin-top:12px"><label class="afl">Due date</label><input class="afi" type="date" id="ef-d" value="'+(task.dueDate||'')+'"></div>'+
+    '<div class="afg" style="margin-top:12px"><label class="afl">Due date</label><input class="afi" id="ef-d" readonly value="'+(task.dueDate||'')+'" placeholder="Tap to select" onclick="openDatePicker(this.value,function(v){document.getElementById(\'ef-d\').value=v;})"></div>'+
     '<div class="afg"><label class="afl">Notes</label><textarea class="afta" id="ef-n" placeholder="Any details...">'+e(task.notes||'')+'</textarea></div>'+
     '<div class="afg"><label class="afl">Recurrence</label><select class="afs" id="ef-rec"><option value="">None</option><option value="daily"'+(task.recurrence==="daily"?' selected':'')+'"+">Daily</option><option value="weekly"'+(task.recurrence==="weekly"?' selected':'')+'"+">Weekly</option><option value="monthly"'+(task.recurrence==="monthly"?' selected':'')+'"+">Monthly</option></select></div>'+
     '<div class="afa"><button class="btn" onclick="cancelEdit()">Cancel</button><button class="btn pri" onclick="saveEditTask()">Save</button></div>'+
@@ -1314,7 +1313,7 @@ function vTimedRoutine(title,color,items,startTime,slot,customKey){
   /* wake time */
   h+='<div class="rt-wake-bar" style="margin-top:12px">'+
     '<label>'+(slot==="am"?"Wake up":"Start")+'</label>'+
-    '<input id="rt-wake-inp" type="text" value="'+e(effStart)+'" maxlength="5" placeholder="HH:MM">'+
+    '<input id="rt-wake-inp" type="text" value="'+e(effStart)+'" maxlength="5" placeholder="HH:MM" readonly onclick="openTimePicker(this.value,function(v){document.getElementById(\'rt-wake-inp\').value=v;})" style="cursor:pointer">'+
     '<button onclick="setRtWake(\''+wakeKey+'\',\''+e(startTime)+'\')" style="font-size:12px;padding:4px 10px;border:1px solid #bae6fd;border-radius:6px;background:#fff;color:#0369a1;cursor:pointer;font-family:inherit">Set</button></div>';
   /* schedule banner */
   h+=schedHtml;
@@ -1323,7 +1322,7 @@ function vTimedRoutine(title,color,items,startTime,slot,customKey){
     '<div style="flex:1;min-width:100px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#888882;margin-bottom:3px">Step name</div>'+
     '<input id="rt-add-title" type="text" placeholder="e.g. Stretch" style="width:100%;box-sizing:border-box"></div>'+
     '<div style="width:60px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#888882;margin-bottom:3px">Time</div>'+
-    '<input id="rt-add-time" type="text" placeholder="HH:MM" maxlength="5" style="width:100%;box-sizing:border-box"></div>'+
+    '<input id="rt-add-time" type="text" placeholder="HH:MM" maxlength="5" readonly onclick="openTimePicker(this.value,function(v){document.getElementById(\'rt-add-time\').value=v;})" style="width:100%;box-sizing:border-box;cursor:pointer"></div>'+
     '<div style="width:50px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#888882;margin-bottom:3px">Mins</div>'+
     '<input id="rt-add-dur" type="number" value="5" min="1" max="120" style="width:100%;box-sizing:border-box"></div>'+
     '<button class="rt-add-btn" onclick="addRtTop(\''+customKey+'\',\''+slot+'\')">Add</button></div>';
@@ -1469,7 +1468,7 @@ function vCountdown(){
       '<div class="aft" style="margin-bottom:14px">'+ttl+'</div>'+
       '<input type="hidden" id="cd-eid" value="'+eid+'">'+
       '<div class="afg"><label class="afl">Event name</label><input class="afi" id="cd-n" placeholder="e.g. Holiday to Argentina" value="'+e(ename)+'" autocorrect="off"></div>'+
-      '<div class="afg"><label class="afl">Date &amp; time</label><input class="afi" type="datetime-local" id="cd-dt" value="'+etarget+'"></div>'+
+      '<div class="afg"><label class="afl">Date &amp; time</label><input class="afi" id="cd-dt" readonly value="'+etarget+'" placeholder="Tap to select" onclick="openDateTimePicker(this.value,function(v){document.getElementById(\'cd-dt\').value=v;})"></div>'+
       '<div class="afa"><button class="btn" onclick="ST.cdAdding=false;ST.cdEditing=null;rMn()">Cancel</button><button class="btn pri" onclick="addCdEvent()">'+btnLabel+'</button></div>'+
     '</div>';
   }
@@ -1845,7 +1844,7 @@ function vInput(){
         '<div class="afg" style="margin:0"><label class="afl">Priority</label><select class="afs" id="inp-t-pri"><option>Urgent</option><option>High</option><option selected>Medium</option><option>Low</option></select></div>'+
       '</div>'+
       '<div class="afr" style="margin-top:12px">'+
-        '<div class="afg" style="margin:0"><label class="afl">Due date</label><input class="afi" type="date" id="inp-t-date"></div>'+
+        '<div class="afg" style="margin:0"><label class="afl">Due date</label><input class="afi" id="inp-t-date" readonly placeholder="Tap to select" onclick="openDatePicker(this.value,function(v){document.getElementById(\'inp-t-date\').value=v;})"></div>'+
         '<div class="afg" style="margin:0"><label class="afl">Recurrence</label><select class="afs" id="inp-t-rec"><option value="">None</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>'+
       '</div>'+
       '<div class="afg"><label class="afl">Notes</label><textarea class="afta" id="inp-t-notes" placeholder="Any details..."></textarea></div>'+
@@ -1874,7 +1873,7 @@ function vInput(){
   } else if(ST.inpTab==="countdown"){
     body='<div class="inp-form"><div class="aft">Add a countdown</div>'+
       '<div class="afg"><label class="afl">Event name</label><input class="afi" id="inp-cd-name" placeholder="e.g. Holiday to Argentina" autocomplete="off"></div>'+
-      '<div class="afg"><label class="afl">Date &amp; time</label><input class="afi" type="datetime-local" id="inp-cd-date"></div>'+
+      '<div class="afg"><label class="afl">Date &amp; time</label><input class="afi" id="inp-cd-date" readonly placeholder="Tap to select" onclick="openDateTimePicker(this.value,function(v){document.getElementById(\'inp-cd-date\').value=v;})"></div>'+
       '<div class="afa"><button class="btn pri" onclick="inpAddCd()">Add countdown</button></div>'+
     '</div>';
   } else if(ST.inpTab==="paste"){
@@ -1885,7 +1884,7 @@ function vInput(){
       '<div id="iprev" style="margin-top:14px"></div>'+
     '</div>';
   }
-  return '<div class="mnp"><div class="pgt">Input</div><div class="pgs">Add items to any part of Life OS</div>'+
+  return '<div class="mnp"><div class="pgt">New task</div><div class="pgs">Add items to any part of Life OS</div>'+
     tabHtml+okHtml+body+'</div>';
 }
 function rMn(){
@@ -1971,6 +1970,161 @@ function rtPreserve(rt){return{customMR:(rt&&rt.customMR)||[],customER:(rt&&rt.c
 function init(){var tasks=gl("tasks");var rem=gl("rem");var ep=gl("ep");var rt=gl("rt");ST.tasks=tasks||DT.map(function(t){var o={};for(var k in t)o[k]=t[k];return o;});ST.rem=rem||DR.map(function(r){var o={};for(var k in r)o[k]=r[k];return o;});var td=ts();if(!ep||ep.lr!==td)ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};else ST.ep=ep;if(!rt||rt.lr!==td){var p=rtPreserve(rt);ST.rt={checks:{},custom:p.custom,customMR:p.customMR,customER:p.customER,mrOrder:p.mrOrder,erOrder:p.erOrder,mrWake:p.mrWake,erWake:p.erWake,timeOverrides:p.timeOverrides,durOverrides:p.durOverrides,urls:p.urls,customSubs:p.customSubs,lr:td};}else{ST.rt=rt;if(!ST.rt.customMR)ST.rt.customMR=[];if(!ST.rt.customER)ST.rt.customER=[];}if(!tasks)sl("tasks",ST.tasks);if(!rem)sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);autoSnap();rSb();rMn();}
 function schedMidnight(){var now=new Date();var mid=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);setTimeout(function(){var td=ts();ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};var p=rtPreserve(ST.rt);ST.rt={checks:{},custom:p.custom,customMR:p.customMR,customER:p.customER,mrOrder:p.mrOrder,erOrder:p.erOrder,mrWake:p.mrWake,erWake:p.erWake,timeOverrides:p.timeOverrides,durOverrides:p.durOverrides,urls:p.urls,customSubs:p.customSubs,lr:td};sl("ep",ST.ep);sl("rt",ST.rt);rSb();rMn();schedMidnight();},mid-now);}
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(ST.add)cAdd();else closeSb();}});
+/* ── Scroll picker (drum roller) ── */
+var spkCb=null;
+function openScrollPicker(opts){
+  /* opts: {title, columns:[{values:[], labels:[], selected}], onDone:fn(values)} */
+  if(document.getElementById("spk-overlay"))return;
+  var ov=document.createElement("div");ov.className="spk-overlay";ov.id="spk-overlay";
+  var sh='<div class="spk-sheet"><div class="spk-hdr"><button class="spk-cancel" onclick="closeScrollPicker()">Cancel</button><span class="spk-title">'+e(opts.title||"Select")+'</span><button class="spk-done" onclick="doneScrollPicker()">Done</button></div>';
+  sh+='<div class="spk-body"><div class="spk-sel"></div>';
+  opts.columns.forEach(function(col,ci){
+    sh+='<div class="spk-col" data-spkcol="'+ci+'"><div class="spk-col-inner">';
+    var vals=col.values;var lbls=col.labels||vals;
+    for(var i=0;i<vals.length;i++){
+      sh+='<div class="spk-item" data-val="'+vals[i]+'">'+e(String(lbls[i]))+'</div>';
+    }
+    sh+='</div>';
+    if(col.label)sh+='<div class="spk-col-lbl">'+e(col.label)+'</div>';
+    sh+='</div>';
+  });
+  sh+='</div></div>';
+  ov.innerHTML=sh;
+  document.body.appendChild(ov);
+  spkCb=opts.onDone||null;
+  /* scroll each column to selected value */
+  var cols=ov.querySelectorAll(".spk-col");
+  for(var c=0;c<cols.length;c++){
+    var sel=opts.columns[c].selected;
+    var items=cols[c].querySelectorAll(".spk-item");
+    var idx=0;
+    for(var j=0;j<items.length;j++){if(items[j].getAttribute("data-val")===String(sel)){idx=j;break;}}
+    cols[c].scrollTop=idx*40;
+    spkAttachSnap(cols[c]);
+  }
+  /* tap overlay bg to close */
+  ov.addEventListener("click",function(ev){if(ev.target===ov)closeScrollPicker();});
+}
+function spkAttachSnap(col){
+  var timer=null;
+  col.addEventListener("scroll",function(){
+    if(timer)clearTimeout(timer);
+    timer=setTimeout(function(){
+      var st=col.scrollTop;
+      var idx=Math.round(st/40);
+      col.scrollTop=idx*40;
+    },80);
+  });
+}
+function closeScrollPicker(){
+  var ov=document.getElementById("spk-overlay");
+  if(ov)ov.parentNode.removeChild(ov);
+  spkCb=null;
+}
+function doneScrollPicker(){
+  var ov=document.getElementById("spk-overlay");
+  if(!ov)return;
+  var cols=ov.querySelectorAll(".spk-col");
+  var vals=[];
+  for(var c=0;c<cols.length;c++){
+    var st=cols[c].scrollTop;
+    var idx=Math.round(st/40);
+    var items=cols[c].querySelectorAll(".spk-item");
+    if(idx>=0&&idx<items.length)vals.push(items[idx].getAttribute("data-val"));
+    else vals.push("");
+  }
+  if(spkCb)spkCb(vals);
+  closeScrollPicker();
+}
+window.openScrollPicker=openScrollPicker;
+window.closeScrollPicker=closeScrollPicker;
+window.doneScrollPicker=doneScrollPicker;
+/* ── Date picker helper ── */
+function openDatePicker(currentVal,callback){
+  var now=new Date();
+  var sy=now.getFullYear();var sm=now.getMonth()+1;var sd=now.getDate();
+  if(currentVal){var pp=currentVal.split("-");if(pp.length===3){sy=parseInt(pp[0],10);sm=parseInt(pp[1],10);sd=parseInt(pp[2],10);}}
+  var months=[];var monthLabels=[];
+  for(var m=1;m<=12;m++){months.push(m);monthLabels.push(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1]);}
+  var days=[];for(var d=1;d<=31;d++)days.push(d);
+  var years=[];for(var y=now.getFullYear()-1;y<=now.getFullYear()+3;y++)years.push(y);
+  openScrollPicker({
+    title:"Select date",
+    columns:[
+      {values:days,selected:sd,label:"Day"},
+      {values:months,labels:monthLabels,selected:sm,label:"Month"},
+      {values:years,selected:sy,label:"Year"}
+    ],
+    onDone:function(v){
+      var dd=String(v[0]);if(dd.length<2)dd="0"+dd;
+      var mm=String(v[1]);if(mm.length<2)mm="0"+mm;
+      var yy=v[2];
+      callback(yy+"-"+mm+"-"+dd);
+    }
+  });
+}
+/* ── Time picker helper ── */
+function openTimePicker(currentVal,callback){
+  var ch=12;var cm=0;
+  if(currentVal){var pp=currentVal.split(":");if(pp.length>=2){ch=parseInt(pp[0],10);cm=parseInt(pp[1],10);}}
+  var hours=[];for(var h=0;h<=23;h++)hours.push(h);
+  var hourLabels=hours.map(function(h){return h<10?"0"+h:String(h);});
+  var mins=[];var minLabels=[];
+  for(var m=0;m<60;m+=5){mins.push(m);minLabels.push(m<10?"0"+m:String(m));}
+  /* snap cm to nearest 5 */
+  var snapM=Math.round(cm/5)*5;if(snapM>=60)snapM=55;
+  openScrollPicker({
+    title:"Select time",
+    columns:[
+      {values:hours,labels:hourLabels,selected:ch,label:"Hour"},
+      {values:mins,labels:minLabels,selected:snapM,label:"Min"}
+    ],
+    onDone:function(v){
+      var hh=String(v[0]);if(hh.length<2)hh="0"+hh;
+      var mm=String(v[1]);if(mm.length<2)mm="0"+mm;
+      callback(hh+":"+mm);
+    }
+  });
+}
+/* ── DateTime picker helper ── */
+function openDateTimePicker(currentVal,callback){
+  /* currentVal format: "2026-03-29T09:00" */
+  var now=new Date();
+  var sy=now.getFullYear();var sm=now.getMonth()+1;var sd=now.getDate();var sh=9;var sn=0;
+  if(currentVal){
+    var parts=currentVal.split("T");
+    if(parts[0]){var dp=parts[0].split("-");if(dp.length===3){sy=parseInt(dp[0],10);sm=parseInt(dp[1],10);sd=parseInt(dp[2],10);}}
+    if(parts[1]){var tp=parts[1].split(":");if(tp.length>=2){sh=parseInt(tp[0],10);sn=parseInt(tp[1],10);}}
+  }
+  var months=[];var monthLabels=[];
+  for(var m=1;m<=12;m++){months.push(m);monthLabels.push(["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1]);}
+  var days=[];for(var d=1;d<=31;d++)days.push(d);
+  var years=[];for(var y=now.getFullYear()-1;y<=now.getFullYear()+3;y++)years.push(y);
+  var hours=[];var hourLabels=[];for(var h=0;h<=23;h++){hours.push(h);hourLabels.push(h<10?"0"+h:String(h));}
+  var mins=[];var minLabels=[];for(var mn=0;mn<60;mn+=5){mins.push(mn);minLabels.push(mn<10?"0"+mn:String(mn));}
+  var snapN=Math.round(sn/5)*5;if(snapN>=60)snapN=55;
+  openScrollPicker({
+    title:"Select date & time",
+    columns:[
+      {values:days,selected:sd,label:"Day"},
+      {values:months,labels:monthLabels,selected:sm,label:"Mon"},
+      {values:years,selected:sy,label:"Year"},
+      {values:hours,labels:hourLabels,selected:sh,label:"Hr"},
+      {values:mins,labels:minLabels,selected:snapN,label:"Min"}
+    ],
+    onDone:function(v){
+      var dd=String(v[0]);if(dd.length<2)dd="0"+dd;
+      var mm=String(v[1]);if(mm.length<2)mm="0"+mm;
+      var yy=v[2];
+      var hh=String(v[3]);if(hh.length<2)hh="0"+hh;
+      var nn=String(v[4]);if(nn.length<2)nn="0"+nn;
+      callback(yy+"-"+mm+"-"+dd+"T"+hh+":"+nn);
+    }
+  });
+}
+window.openDatePicker=openDatePicker;
+window.openTimePicker=openTimePicker;
+window.openDateTimePicker=openDateTimePicker;
 /* ── Swipe to delete ── */
 var swp={el:null,startX:0,startY:0,dx:0,active:false,delBtn:null};
 function initSwipe(){
