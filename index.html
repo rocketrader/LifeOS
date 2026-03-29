@@ -91,9 +91,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .pgs{font-size:13px;color:#888882;margin-bottom:20px}
 .pghr{display:flex;align-items:baseline;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .smb{font-size:12px;color:#888882;cursor:pointer;border:none;background:none;font-family:inherit;padding:4px 0;min-height:44px;display:inline-flex;align-items:center}
-.tlist{display:flex;flex-direction:column;gap:6px}
+.tlist{display:flex;flex-direction:column;gap:4px}
 .tcard{background:#ffffff;border-radius:8px;border:1px solid #e0ddd8;overflow:hidden}
-.trow{display:flex;align-items:flex-start;padding:14px 16px;gap:10px;cursor:pointer;min-height:52px;flex-wrap:wrap}
+.trow{display:flex;align-items:center;padding:10px 14px;gap:8px;cursor:pointer;min-height:44px}
 .tck{width:22px;height:22px;border-radius:50%;border:2.5px solid currentColor;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;font-weight:700;margin-top:1px}
 .tck.dn{background:currentColor}.tck.dn::after{content:"\2713";color:#fff}
 .cu{color:#c0392b}.ch{color:#b45309}.cm{color:#1d4ed8}.cl{color:#15803d}
@@ -103,8 +103,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tt.dn{text-decoration:line-through;color:#888882}
 .tp{font-size:12px;color:#888882;margin-top:2px}
 .tr{display:flex;align-items:center;gap:7px;flex-shrink:0;justify-content:flex-end}
-.t-meta{display:flex;align-items:center;justify-content:space-between;width:100%;padding-left:34px;margin-top:2px}
-.t-meta.with-urg{padding-left:64px}
+.t-meta{display:flex;align-items:center;gap:7px;flex-shrink:0;margin-left:auto}
+.t-meta.with-urg{}
 .dl{font-size:12px;font-weight:500;white-space:nowrap}
 .dl.ov{color:#c0392b}.dl.td{color:#b45309}.dl.sn{color:#b45309}.dl.ft{color:#888882}
 .ta{font-size:13px;color:#888882;display:inline-block;transition:transform .2s}
@@ -281,13 +281,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   #sb{position:fixed;top:0;left:0;height:100%;width:280px;z-index:200;transform:translateX(-100%)}
   #sb.open{transform:translateX(0)}
   .logo{padding-top:calc(var(--st) + 20px)}
-  .mnp{padding:20px 16px;padding-bottom:calc(20px + var(--sb))}
+  .mnp{padding:20px 14px;padding-bottom:calc(20px + var(--sb))}
   .pgt{font-size:22px}
   .rtg{grid-template-columns:1fr}
   .afr{grid-template-columns:1fr}
   #tl-left table{width:190px}
   .tl-name-h,.tl-name-c{width:126px;max-width:126px}
   .tl-pri-h,.tl-pri-c{width:64px}
+  /* Compact task cards on mobile */
+  .trow{padding:8px 12px;gap:6px;min-height:40px}
+  .tt{font-size:13px}
+  .tcard+.tcard{margin-top:0;border-top:none}
+  /* Routine add form wraps on mobile */
+  .rt-add-bar{flex-wrap:wrap;gap:6px}
+  .rt-add-bar input{font-size:12px;padding:6px 8px}
+  .rt-wake-bar{flex-wrap:wrap;gap:6px;padding:8px 12px}
+  .rt-sched{font-size:11px;padding:6px 12px}
+  /* Routine items compact */
+  .rti{padding:10px 10px;gap:8px;min-height:42px}
+  .rt-time{font-size:10px;min-width:36px}
+  .rtit2{font-size:12px}
+  .rt-dur{font-size:9px}
+  .rt-hard-lbl{font-size:8px;padding:1px 4px}
+  .rt-drag{width:18px;font-size:14px}
+  /* Postpone button compact */
+  .ppn-btn{font-size:10px;padding:2px 6px}
+  .dl{font-size:10px}
+  .tp{font-size:10px}
 }
 /* Dark mode lockout */
 @media (prefers-color-scheme: dark) {
@@ -1105,17 +1125,12 @@ function tcard(task,showP){
   var arrow='<span class="'+arrowCls+'">\u25be</span>';
   var postponeBtn=(st==="ov"&&!task.completed)?'<button class="ppn-btn" onclick="event.stopPropagation();postponeTask(\''+task.id+'\')">Postpone</button>':"";
   var notes=xp?'<div class="tn">'+(task.notes?e(task.notes)+"<br>":"")+'<div class="tn-acts"><button class="tn-btn" onclick="editTask(\''+task.id+'\')">Edit</button><button class="tn-btn del" onclick="deleteTask(\''+task.id+'\')">Delete</button></div></div>':"";
-  /* Row 1: urgent dot + checkbox + title + arrow */
-  /* Row 2: project + date + postpone */
-  var metaCls=isUrg?"t-meta with-urg":"t-meta";
-  var metaRow=(proj||dueLbl||postponeBtn)?'<div class="'+metaCls+'">'+proj+'<div class="tr">'+postponeBtn+dueLbl+arrow+'</div></div>':"";
   return '<div class="tcard">'+
     '<div class="trow" onclick="xpnd(\''+task.id+'\')">'+
       urgDot+
       '<div class="tck '+pxc+' '+dnc+'" onclick="event.stopPropagation();tick(\''+task.id+'\')"></div>'+
       '<div class="tb"><div class="tt '+dnc+'">'+e(task.title)+'</div></div>'+
-      ((!proj&&!dueLbl)?arrow:"")+
-      metaRow+
+      '<div class="t-meta">'+proj+postponeBtn+dueLbl+arrow+'</div>'+
     '</div>'+notes+'</div>';
 }
 function aform(){
