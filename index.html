@@ -703,7 +703,7 @@ var DE=[
   {id:"ep7",title:"Set alarm"},
   {id:"ep8",title:"Lock up / security check"},
 ];
-var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],customMR:[],customER:[],lr:""},view:"today",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,iRt:[],iEp:[],iCd:[],cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null,inpTab:"task",inpOk:""};
+var ST={tasks:[],rem:[],ep:{items:[],lr:""},rt:{checks:{},custom:[],customMR:[],customER:[],lr:""},view:"General To Do",xp:new Set(),add:false,api:0,tlm:1,tld:false,ip:[],ir:[],ie:[],is:false,iRt:[],iEp:[],iCd:[],cdAdding:false,cdEditing:null,editing:null,search:"",filterProj:null,filterPri:null,inpTab:"task",inpOk:""};
 function gl(k){try{return JSON.parse(localStorage.getItem("los_"+k));}catch(ex){return null;}}
 function sl(k,v){try{localStorage.setItem("los_"+k,JSON.stringify(v));}catch(ex){}queueSync();}
 function ts(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
