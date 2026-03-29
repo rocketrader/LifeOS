@@ -1698,6 +1698,7 @@ function rSb(){
   });
   var phtml="";
   PROJ.forEach(function(p,i){
+    if(p==="General To Do")return;
     var ct=ST.tasks.filter(function(x){return x.project===p&&!x.completed;}).length;
     var actCls=ST.view===p?"act":"";
     var bdg=ct>0?'<span class="sb-bdg">'+ct+'</span>':"";
