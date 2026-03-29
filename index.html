@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   LifeOS - Personal Task Manager
-  Version: v5.7 (routine overhaul)
+  Version: v5.8 (sub-item arrows + swipe-to-delete)
 
   ARCHITECTURE:
   - Single HTML file, all CSS and JS inline
@@ -45,7 +45,7 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Life OS v5.7</title>
+<title>Life OS v5.8</title>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
@@ -223,8 +223,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .rt-hard-clear:hover{opacity:1}
 .rt-url-ico{font-size:11px;color:#1d4ed8;cursor:pointer;margin-left:4px;opacity:0.6;text-decoration:none}
 .rt-url-ico:hover{opacity:1}
-.rt-sub-add{font-size:11px;color:#888882;cursor:pointer;padding:4px 8px 4px 54px;background:none;border:none;font-family:inherit}
-.rt-sub-add:hover{color:#1d4ed8}
+.rt-sub-arrow{font-size:18px;color:#ccc9c3;cursor:pointer;padding:0 4px;flex-shrink:0;font-weight:700;line-height:1}
+.rt-sub-arrow:hover{color:#1d4ed8}
+/* Swipe to delete */
+.swipe-wrap{position:relative;overflow:hidden}
+.swipe-inner{position:relative;z-index:1;transition:transform 0.2s;background:inherit}
+.swipe-del{position:absolute;right:0;top:0;bottom:0;width:80px;display:flex;align-items:center;justify-content:center;background:#dc2626;color:#fff;font-size:13px;font-weight:600;cursor:pointer;z-index:0}
 .rt-anytime{margin-top:16px;padding-top:12px;border-top:1px solid #e0ddd8}
 .rtca{font-size:10px;letter-spacing:1.3px;text-transform:uppercase;color:#888882;padding:12px 0 5px;font-weight:500}
 .rtca:first-child{padding-top:0}
@@ -473,7 +477,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="app"><aside id="sb"></aside><main id="mn"></main></div>
 <script>
 var cdInterval=null;
-var V="v5.7";
+var V="v5.8";
 /* ── Cloud Sync (Firebase) ── */
 var FBCFG={
   apiKey:"AIzaSyCuhIldfs8yjJKhzoV_ENff5pTXoegXh2I",
@@ -545,6 +549,7 @@ function startApp(){
   if(appStarted)return;
   appStarted=true;
   init();
+  initSwipe();
   schedMidnight();
 }
 function saveToCloud(){
@@ -1350,11 +1355,12 @@ function vTimedRoutine(title,color,items,startTime,slot,customKey){
       '<span class="rt-time" onclick="editRtTime(this,\''+it.id+'\')" style="cursor:pointer">'+timeStr+'</span>'+
       '<div class="rtik '+dnc+'" onclick="tRt(\''+it.id+'\',\''+slot+'\')"></div>'+
       '<span class="rtit2 '+dnc+'" '+titleOnclick+'>'+e(it.title)+durLbl+'</span>'+urlIco+hardLbl+del+
-      '<span onclick="setRtUrl(\''+it.id+'\')" style="font-size:11px;cursor:pointer;opacity:0.4;margin-left:2px" title="Set URL">&#9881;</span></div>';
+      '<span onclick="setRtUrl(\''+it.id+'\')" style="font-size:11px;cursor:pointer;opacity:0.4;margin-left:2px" title="Set URL">&#9881;</span>'+
+      '<span class="rt-sub-arrow" onclick="event.stopPropagation();aRtSub(\''+it.id+'\',\''+slot+'\')" title="Add sub-item">&#8250;</span></div>';
     /* sub-items (built-in + custom) */
     var allSub=(it.sub||[]).slice();
     if(cSubs[it.id])cSubs[it.id].forEach(function(s){allSub.push(s);});
-    if(allSub.length||true){
+    if(allSub.length){
       h+='<div class="rt-sub">';
       allSub.forEach(function(s,si){
         var sid=it.id+"_s"+si;
@@ -1363,7 +1369,6 @@ function vTimedRoutine(title,color,items,startTime,slot,customKey){
           '<div class="rtik '+sdnc+'" onclick="tRt(\''+sid+'\',\''+slot+'\')"></div>'+
           '<span class="rtit2 '+sdnc+'" onclick="tRt(\''+sid+'\',\''+slot+'\')">'+e(typeof s==="string"?s:s.title)+'</span></div>';
       });
-      h+='<button class="rt-sub-add" onclick="aRtSub(\''+it.id+'\',\''+slot+'\')">+ Add sub-item</button>';
       h+='</div>';
     }
     curMin+=effDur||0;
@@ -1966,6 +1971,94 @@ function rtPreserve(rt){return{customMR:(rt&&rt.customMR)||[],customER:(rt&&rt.c
 function init(){var tasks=gl("tasks");var rem=gl("rem");var ep=gl("ep");var rt=gl("rt");ST.tasks=tasks||DT.map(function(t){var o={};for(var k in t)o[k]=t[k];return o;});ST.rem=rem||DR.map(function(r){var o={};for(var k in r)o[k]=r[k];return o;});var td=ts();if(!ep||ep.lr!==td)ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};else ST.ep=ep;if(!rt||rt.lr!==td){var p=rtPreserve(rt);ST.rt={checks:{},custom:p.custom,customMR:p.customMR,customER:p.customER,mrOrder:p.mrOrder,erOrder:p.erOrder,mrWake:p.mrWake,erWake:p.erWake,timeOverrides:p.timeOverrides,durOverrides:p.durOverrides,urls:p.urls,customSubs:p.customSubs,lr:td};}else{ST.rt=rt;if(!ST.rt.customMR)ST.rt.customMR=[];if(!ST.rt.customER)ST.rt.customER=[];}if(!tasks)sl("tasks",ST.tasks);if(!rem)sl("rem",ST.rem);sl("ep",ST.ep);sl("rt",ST.rt);autoSnap();rSb();rMn();}
 function schedMidnight(){var now=new Date();var mid=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5);setTimeout(function(){var td=ts();ST.ep={items:DE.map(function(i){return{id:i.id,title:i.title,completed:false};}),lr:td};var p=rtPreserve(ST.rt);ST.rt={checks:{},custom:p.custom,customMR:p.customMR,customER:p.customER,mrOrder:p.mrOrder,erOrder:p.erOrder,mrWake:p.mrWake,erWake:p.erWake,timeOverrides:p.timeOverrides,durOverrides:p.durOverrides,urls:p.urls,customSubs:p.customSubs,lr:td};sl("ep",ST.ep);sl("rt",ST.rt);rSb();rMn();schedMidnight();},mid-now);}
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){if(ST.add)cAdd();else closeSb();}});
+/* ── Swipe to delete ── */
+var swp={el:null,startX:0,startY:0,dx:0,active:false,delBtn:null};
+function initSwipe(){
+  var mn=document.getElementById("mn");if(!mn)return;
+  mn.addEventListener("touchstart",function(ev){
+    /* don't swipe on drag handles */
+    var t=ev.target;
+    while(t&&t!==mn){if(t.classList&&t.classList.contains("rt-drag"))return;t=t.parentNode;}
+    /* find swipeable element: .tcard or .rti with data-rtid */
+    var el=ev.target;
+    while(el&&el!==mn){
+      if(el.classList&&(el.classList.contains("tcard")||(el.classList.contains("rti")&&el.getAttribute&&el.getAttribute("data-rtid"))))break;
+      el=el.parentNode;
+    }
+    if(!el||el===mn)return;
+    /* close any previously open swipe */
+    if(swp.el&&swp.el!==el){swp.el.style.transform="";if(swp.delBtn&&swp.delBtn.parentNode)swp.delBtn.parentNode.removeChild(swp.delBtn);swp.delBtn=null;}
+    swp.el=el;swp.startX=ev.touches[0].clientX;swp.startY=ev.touches[0].clientY;swp.dx=0;swp.active=false;
+  },{passive:true});
+  mn.addEventListener("touchmove",function(ev){
+    if(!swp.el)return;
+    var dx=ev.touches[0].clientX-swp.startX;
+    var dy=ev.touches[0].clientY-swp.startY;
+    /* only activate horizontal swipe */
+    if(!swp.active){
+      if(Math.abs(dy)>Math.abs(dx)){swp.el=null;return;}
+      if(Math.abs(dx)>10)swp.active=true;else return;
+    }
+    if(dx>0)dx=0;/* only left swipe */
+    if(dx<-100)dx=-100;
+    swp.dx=dx;swp.el.style.transform="translateX("+dx+"px)";
+    swp.el.style.transition="none";
+    /* ensure delete button behind */
+    if(!swp.delBtn){
+      var d=document.createElement("div");
+      d.style.cssText="position:absolute;right:0;top:0;bottom:0;width:80px;display:flex;align-items:center;justify-content:center;background:#dc2626;color:#fff;font-size:13px;font-weight:600;cursor:pointer;border-radius:0 8px 8px 0;z-index:0";
+      d.textContent="Delete";
+      swp.el.style.position="relative";swp.el.style.zIndex="1";
+      if(!swp.el.parentNode.style.overflow){swp.el.parentNode.style.position="relative";}
+      swp.el.parentNode.insertBefore(d,swp.el.nextSibling);
+      d.style.position="absolute";d.style.top=swp.el.offsetTop+"px";d.style.height=swp.el.offsetHeight+"px";
+      swp.delBtn=d;
+      d.addEventListener("click",function(){swipeDelete();});
+    }
+    ev.preventDefault();
+  },{passive:false});
+  mn.addEventListener("touchend",function(){
+    if(!swp.el||!swp.active)return;
+    swp.el.style.transition="transform 0.2s";
+    if(swp.dx<-50){
+      /* keep open */
+      swp.el.style.transform="translateX(-80px)";
+    }else{
+      /* snap back */
+      swp.el.style.transform="";
+      if(swp.delBtn&&swp.delBtn.parentNode)swp.delBtn.parentNode.removeChild(swp.delBtn);
+      swp.delBtn=null;swp.el=null;
+    }
+    swp.active=false;
+  });
+}
+function swipeDelete(){
+  if(!swp.el)return;
+  var el=swp.el;
+  /* determine what to delete */
+  if(el.classList.contains("tcard")){
+    /* find task id from onclick */
+    var row=el.querySelector(".trow");
+    if(row){
+      var oc=row.getAttribute("onclick")||"";
+      var m=oc.match(/xpnd\('([^']+)'\)/);
+      if(m){deleteTask(m[1]);}
+    }
+  }else if(el.getAttribute("data-rtid")){
+    var rid=el.getAttribute("data-rtid");
+    if(rid.indexOf("rc")===0){
+      /* custom routine item - find which customKey */
+      var found=false;
+      (ST.rt.customMR||[]).forEach(function(c){if(c.id===rid)found="customMR";});
+      if(!found)(ST.rt.customER||[]).forEach(function(c){if(c.id===rid)found="customER";});
+      if(found)dRtC(rid,found);
+    }
+  }
+  /* cleanup */
+  if(swp.delBtn&&swp.delBtn.parentNode)swp.delBtn.parentNode.removeChild(swp.delBtn);
+  swp.delBtn=null;swp.el=null;
+}
+window.swipeDelete=swipeDelete;
 /* PIN input: submit on Enter key */
 var pinInp=document.getElementById("pin-inp");
 if(pinInp)pinInp.addEventListener("keydown",function(ev){if(ev.key==="Enter")submitPin();});
