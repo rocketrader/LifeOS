@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
   LifeOS - Personal Task Manager
-  Version: v5.5 (timed routines)
+  Version: v5.6 (sidebar reorder)
 
   ARCHITECTURE:
   - Single HTML file, all CSS and JS inline
@@ -45,7 +45,7 @@
 <meta name="apple-mobile-web-app-title" content="Life OS">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Life OS v5.5</title>
+<title>Life OS v5.6</title>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <style>
@@ -428,7 +428,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="app"><aside id="sb"></aside><main id="mn"></main></div>
 <script>
 var cdInterval=null;
-var V="v5.5";
+var V="v5.6";
 /* ── Cloud Sync (Firebase) ── */
 var FBCFG={
   apiKey:"AIzaSyCuhIldfs8yjJKhzoV_ENff5pTXoegXh2I",
@@ -1676,7 +1676,9 @@ function rSb(){
   (ST.rt.customER||[]).forEach(function(it){if(!checks[it.id+"_eve"])rtLeftEV++;});
   /* Count anytime items */
   RD_ANYTIME.filter(function(r){return r.days==="daily"||(Array.isArray(r.days)&&r.days.indexOf(dow)>=0);}).forEach(function(r){if(!checks[r.id+"_any"])rtLeftAM++;});
+  var gtdCt=ST.tasks.filter(function(x){return x.project==="General To Do"&&!x.completed;}).length;
   var views=[
+    {v:"General To Do",l:"General To Do",c:gtdCt},
     {v:"today",l:"Today",c:todayCt},
     {v:"input",l:"Input",c:0},
     {v:"morning",l:"Morning routine",c:rtLeftAM},
